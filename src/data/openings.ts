@@ -1,0 +1,133 @@
+import type { Opening } from '../types'
+
+export const openings: Opening[] = [
+  {
+    id: 'italian-game',
+    name: 'Italian Game',
+    side: 'white',
+    eco: 'C50',
+    description: 'A classical opening that develops quickly toward the center and aims for early control of e5.',
+    moves: ['e4', 'e5', 'Nf3', 'Nc6', 'Bc4', 'Bc5', 'c3', 'Nf6', 'd4', 'exd4', 'cxd4', 'Bb4+', 'Nc3', 'Nxe4'],
+    beginnerTips: [
+      'Control the center with pawns on e4 and d4.',
+      'Develop your knights before bishops.',
+      'Bc4 targets the weak f7 square — a classic Italian strategy.',
+      'c3 prepares the d4 pawn break to challenge Black\'s center.',
+    ],
+  },
+  {
+    id: 'ruy-lopez',
+    name: 'Ruy Lopez',
+    side: 'white',
+    eco: 'C60',
+    description: 'One of the oldest and most respected openings, pressuring Black\'s center from move 3.',
+    moves: ['e4', 'e5', 'Nf3', 'Nc6', 'Bb5', 'a6', 'Ba4', 'Nf6', 'O-O', 'Be7', 'Re1', 'b5', 'Bb3', 'd6', 'c3', 'O-O'],
+    beginnerTips: [
+      'Bb5 indirectly attacks e5 by pinning the Nc6 that defends it.',
+      'Castling early keeps your king safe while the center opens.',
+      'Re1 prepares to support the e4 pawn and increases rook activity.',
+      'c3 supports a future d4 central break.',
+    ],
+  },
+  {
+    id: 'queens-gambit',
+    name: "Queen's Gambit",
+    side: 'white',
+    eco: 'D06',
+    description: 'A powerful opening offering a pawn to gain central control and freedom for your pieces.',
+    moves: ['d4', 'd5', 'c4', 'e6', 'Nc3', 'Nf6', 'Bg5', 'Be7', 'e3', 'O-O', 'Nf3', 'h6', 'Bh4', 'b6'],
+    beginnerTips: [
+      'c4 offers a pawn to lure Black\'s d5 pawn away from the center.',
+      'Black usually declines with e6, maintaining a solid pawn structure.',
+      'Bg5 pins the Nf6 that defends e5 — a key positional idea.',
+      'Control of the d5 square is the long-term strategic goal.',
+    ],
+  },
+  {
+    id: 'london-system',
+    name: 'London System',
+    side: 'white',
+    eco: 'D02',
+    description: 'A solid, reliable system that builds a strong pawn triangle and is easy to learn.',
+    moves: ['d4', 'd5', 'Nf3', 'Nf6', 'Bf4', 'e6', 'e3', 'Bd6', 'Bg3', 'O-O', 'Nbd2', 'c5', 'c3', 'Nc6'],
+    beginnerTips: [
+      'The London is a "system" — the plan stays the same regardless of what Black plays.',
+      'Bf4 develops the bishop before closing it in with e3.',
+      'The pawn structure d4-e3-c3 creates a solid, hard-to-attack formation.',
+      'Nbd2 keeps the c-file open and avoids blocking the bishop.',
+    ],
+  },
+  {
+    id: 'scotch-game',
+    name: 'Scotch Game',
+    side: 'white',
+    eco: 'C45',
+    description: 'An aggressive, open game that challenges Black\'s center immediately on move 3.',
+    moves: ['e4', 'e5', 'Nf3', 'Nc6', 'd4', 'exd4', 'Nxd4', 'Nf6', 'Nxc6', 'bxc6', 'e5', 'Qe7', 'Qe2', 'Nd5', 'c4', 'Nb6'],
+    beginnerTips: [
+      'd4 immediately challenges the e5 pawn — classic Scotch aggression.',
+      'After Nxd4, White\'s knight is strong in the center.',
+      'Nxc6 doubles Black\'s pawns but gives up the strong central knight.',
+      'The open game leads to rich tactical positions — stay alert!',
+    ],
+  },
+  {
+    id: 'caro-kann',
+    name: 'Caro-Kann Defense',
+    side: 'black',
+    eco: 'B12',
+    description: 'A solid defense to 1.e4 that avoids early complications while fighting for equality.',
+    moves: ['e4', 'c6', 'd4', 'd5', 'Nc3', 'dxe4', 'Nxe4', 'Bf5', 'Ng3', 'Bg6', 'h4', 'h6', 'Nf3', 'Nd7', 'h5', 'Bh7'],
+    beginnerTips: [
+      'c6 prepares d5 without blocking the c8 bishop — unlike the French.',
+      'dxe4 relieves central tension on your own terms.',
+      'Bf5 develops the bishop actively before the pawn structure closes.',
+      'The Caro-Kann gives Black a solid, slightly cramped but very sound position.',
+    ],
+  },
+  {
+    id: 'french-defense',
+    name: 'French Defense',
+    side: 'black',
+    eco: 'C11',
+    description: 'A counter-punching defense that leads to rich strategic battles with pawn breaks.',
+    moves: ['e4', 'e6', 'd4', 'd5', 'Nc3', 'Nf6', 'Bg5', 'Be7', 'e5', 'Nd7', 'Bxe7', 'Qxe7', 'f4', 'a6', 'Nf3', 'c5'],
+    beginnerTips: [
+      'e6 and d5 build a solid pawn chain but the c8 bishop can become passive.',
+      'The c5 break is Black\'s primary counter-attack — aim for it!',
+      'Nd7 retreats but prepares c5 and avoids the e5 pawn fork.',
+      'The French leads to rich strategic battles with good long-term prospects.',
+    ],
+  },
+  {
+    id: 'sicilian-defense',
+    name: 'Sicilian Defense',
+    side: 'black',
+    eco: 'B90',
+    description: 'The most popular and combative reply to 1.e4, fighting for asymmetrical counterplay.',
+    moves: ['e4', 'c5', 'Nf3', 'd6', 'd4', 'cxd4', 'Nxd4', 'Nf6', 'Nc3', 'a6', 'Be2', 'e5', 'Nb3', 'Be7', 'O-O', 'O-O'],
+    beginnerTips: [
+      'c5 fights for the center without allowing White a free e4-d4 duo.',
+      'a6 is the Najdorf — prevents Bb5 and prepares queenside expansion.',
+      'e5 kicks the knight from d4 and gains central space.',
+      'Castle early and aim for queenside counterplay against White\'s king.',
+    ],
+  },
+  {
+    id: 'scandinavian',
+    name: 'Scandinavian Defense',
+    side: 'black',
+    eco: 'B01',
+    description: 'An immediate central challenge to 1.e4 that leads to clear, easy-to-understand positions.',
+    moves: ['e4', 'd5', 'exd5', 'Qxd5', 'Nc3', 'Qa5', 'd4', 'Nf6', 'Nf3', 'Bf5', 'Bc4', 'e6', 'O-O', 'Be7'],
+    beginnerTips: [
+      'd5 immediately challenges White\'s e4 pawn — very direct and principled.',
+      'Qa5 is the main retreat, keeping the queen active and eyeing c7.',
+      'Bf5 develops actively before the pawn chain closes in.',
+      'The Scandinavian gives clear plans: develop quickly, castle, and fight for d5.',
+    ],
+  },
+]
+
+export const getOpeningById = (id: string): Opening | undefined =>
+  openings.find((o) => o.id === id)
