@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Chessboard } from 'react-chessboard'
 import type { Opening, OpeningProgress, TrapLine } from '../types'
 import { NavBar } from '../components/NavBar'
@@ -7,7 +8,7 @@ interface OpeningPageProps {
   opening: Opening
   progress?: OpeningProgress
   isDue: boolean
-  onStartPractice: () => void
+  onStartPractice: (limit?: number) => void
   onStartTrap: (trap: TrapLine) => void
   onBack: () => void
 }
@@ -16,6 +17,11 @@ export function OpeningPage({ opening, progress, isDue, onStartPractice, onStart
   const isWhite = opening.side === 'white'
   const moveCount = Math.ceil(opening.moves.length / 2)
   const demo = useDemo(opening)
+
+  // Progressive stages: learn the first few moves before the whole line.
+  const essentialsLen = Math.min(6, opening.moves.length)
+  const hasStages = opening.moves.length > essentialsLen
+  const [stage, setStage] = useState<'essentials' | 'full'>('full')
 
   const movePairs: Array<{ w: string; b?: string; wIdx: number; bIdx: number }> = []
   for (let i = 0; i < opening.moves.length; i += 2) {
@@ -93,14 +99,35 @@ export function OpeningPage({ opening, progress, isDue, onStartPractice, onStart
               </ul>
             </div>
 
+            {/* Stage selector — learn the essentials first, then the full line */}
+            {hasStages && (
+              <div className="mb-4">
+                <p className="font-body text-xs text-ivory-500 mb-2">How much do you want to practice?</p>
+                <div className="inline-flex p-1 rounded-xl bg-ink-800 border border-ink-700 gap-1">
+                  <StageTab
+                    active={stage === 'essentials'}
+                    onClick={() => setStage('essentials')}
+                    label="Essentials"
+                    sub={`${Math.ceil(essentialsLen / 2)} moves`}
+                  />
+                  <StageTab
+                    active={stage === 'full'}
+                    onClick={() => setStage('full')}
+                    label="Full line"
+                    sub={`${moveCount} moves`}
+                  />
+                </div>
+              </div>
+            )}
+
             <button
-              onClick={onStartPractice}
+              onClick={() => onStartPractice(hasStages && stage === 'essentials' ? essentialsLen : undefined)}
               className="w-full sm:w-auto flex items-center justify-center gap-3 bg-gold-500 hover:bg-gold-400 text-ink-950 font-body font-semibold text-base px-8 py-4 rounded-xl transition-all duration-200 hover:shadow-[0_0_32px_rgba(212,165,32,0.4)] focus-visible:outline-none"
             >
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                 <path d="M7 4l8 6-8 6V4z" fill="currentColor" />
               </svg>
-              Start Practice
+              {hasStages && stage === 'essentials' ? 'Practice the Essentials' : 'Start Practice'}
             </button>
 
             {/* Traps */}
@@ -223,6 +250,20 @@ export function OpeningPage({ opening, progress, isDue, onStartPractice, onStart
         </div>
       </div>
     </div>
+  )
+}
+
+function StageTab({ active, onClick, label, sub }: { active: boolean; onClick: () => void; label: string; sub: string }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`px-4 py-2 rounded-lg text-left transition-colors duration-150 focus-visible:outline-none ${
+        active ? 'bg-gold-500 text-ink-950' : 'text-ivory-400 hover:text-ivory-100'
+      }`}
+    >
+      <span className="block font-body text-sm font-semibold leading-tight">{label}</span>
+      <span className={`block font-body text-[11px] leading-tight ${active ? 'text-ink-900/70' : 'text-ivory-600'}`}>{sub}</span>
+    </button>
   )
 }
 

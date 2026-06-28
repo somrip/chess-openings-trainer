@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Chessboard } from 'react-chessboard'
+import { Chess } from 'chess.js'
 import type { Square, Move } from 'chess.js'
 import type { Opening, TrapLine } from '../types'
 import { usePractice } from '../hooks/usePractice'
@@ -10,16 +11,22 @@ import { NavBar } from '../components/NavBar'
 interface PracticeModeProps {
   opening: Opening
   trap?: TrapLine | null
+  /** When set, practice only the first N half-moves (the "essentials" stage). */
+  maxMoves?: number
   onBack: () => void
   onChooseAnother: () => void
   onCompleted: (openingId: string) => void
 }
 
-export function PracticeMode({ opening, trap, onBack, onChooseAnother, onCompleted }: PracticeModeProps) {
-  const moves = trap ? trap.moves : opening.moves
+export function PracticeMode({ opening, trap, maxMoves, onBack, onChooseAnother, onCompleted }: PracticeModeProps) {
+  const baseMoves = trap ? trap.moves : opening.moves
+  const isEssentials = !trap && typeof maxMoves === 'number' && maxMoves < baseMoves.length
+  const moves = isEssentials ? baseMoves.slice(0, maxMoves) : baseMoves
   const side = trap ? trap.side : opening.side
   const notes = (trap ? trap.moveNotes : opening.moveNotes) ?? []
   const title = trap ? `${opening.name}: ${trap.name}` : opening.name
+  // Only a full main-line completion counts toward learned/spaced-repetition.
+  const recordsProgress = !trap && !isEssentials
   const isWhite = side === 'white'
 
   const [soundOn, setSoundOn] = useState(true)
@@ -28,6 +35,7 @@ export function PracticeMode({ opening, trap, onBack, onChooseAnother, onComplet
   const [shakeKey, setShakeKey] = useState(0)
   const [lastCorrect, setLastCorrect] = useState(false)
   const [hintLevel, setHintLevel] = useState(0)
+  const [selectedSquare, setSelectedSquare] = useState<Square | null>(null)
   const completedRef = useRef(false)
 
   function soundForMove(move: Move) {
@@ -36,7 +44,7 @@ export function PracticeMode({ opening, trap, onBack, onChooseAnother, onComplet
     else play('move')
   }
 
-  const { fen, status, currentMoveIndex, totalMoves, repetitions, isUserTurn, lastMove, makeMove, getHint, restart } =
+  const { fen, status, currentMoveIndex, totalMoves, repetitions, isUserTurn, lastMove, lastMistake, makeMove, getHint, restart } =
     usePractice(
       { moves, side },
       {
@@ -51,7 +59,7 @@ export function PracticeMode({ opening, trap, onBack, onChooseAnother, onComplet
         },
         onComplete: () => {
           play('success')
-          if (!trap && !completedRef.current) {
+          if (recordsProgress && !completedRef.current) {
             completedRef.current = true
             onCompleted(opening.id)
           }
@@ -59,17 +67,47 @@ export function PracticeMode({ opening, trap, onBack, onChooseAnother, onComplet
       },
     )
 
-  // Clear the "correct!" flash and any active hint when the position advances.
+  // Clear the "correct!" flash, the active hint, and any selection when the
+  // position advances.
   useEffect(() => {
     setHintLevel(0)
+    setSelectedSquare(null)
     if (lastCorrect) {
       const t = setTimeout(() => setLastCorrect(false), 700)
       return () => clearTimeout(t)
     }
   }, [currentMoveIndex]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  const canMoveNow = isUserTurn && (status === 'waiting' || status === 'wrong')
+
   function onDrop(sourceSquare: Square, targetSquare: Square): boolean {
+    setSelectedSquare(null)
     return makeMove(sourceSquare, targetSquare, 'q')
+  }
+
+  function ownPieceAt(square: Square): boolean {
+    const piece = new Chess(fen).get(square)
+    return !!piece && piece.color === (isWhite ? 'w' : 'b')
+  }
+
+  // Click / tap to move: tap a piece, then tap its destination.
+  function onSquareClick(square: Square) {
+    if (!canMoveNow) return
+    if (selectedSquare) {
+      if (square === selectedSquare) {
+        setSelectedSquare(null)
+        return
+      }
+      const moved = makeMove(selectedSquare, square, 'q')
+      if (moved) {
+        setSelectedSquare(null)
+        return
+      }
+      // Missed: reselect if they tapped another of their own pieces, else clear.
+      setSelectedSquare(ownPieceAt(square) ? square : null)
+      return
+    }
+    if (ownPieceAt(square)) setSelectedSquare(square)
   }
 
   function handleRestart() {
@@ -82,6 +120,8 @@ export function PracticeMode({ opening, trap, onBack, onChooseAnother, onComplet
       <SuccessScreen
         opening={opening}
         trap={trap}
+        recorded={recordsProgress}
+        isEssentials={isEssentials}
         onAgain={handleRestart}
         onChooseAnother={onChooseAnother}
       />
@@ -110,6 +150,22 @@ export function PracticeMode({ opening, trap, onBack, onChooseAnother, onComplet
     if (hintLevel >= 2) {
       squareStyles[hint.to] = {
         background: 'radial-gradient(circle, rgba(240,192,64,0.85) 28%, transparent 30%)',
+      }
+    }
+  }
+  // Click-to-move: highlight the selected piece and dot its legal destinations.
+  if (selectedSquare) {
+    squareStyles[selectedSquare] = {
+      ...squareStyles[selectedSquare],
+      background: 'rgba(240,192,64,0.35)',
+      boxShadow: 'inset 0 0 0 3px rgba(240,192,64,0.8)',
+    }
+    for (const m of new Chess(fen).moves({ square: selectedSquare, verbose: true })) {
+      squareStyles[m.to] = {
+        ...squareStyles[m.to],
+        background: m.captured
+          ? 'radial-gradient(circle, transparent 55%, rgba(240,192,64,0.5) 56%)'
+          : 'radial-gradient(circle, rgba(240,192,64,0.7) 22%, transparent 24%)',
       }
     }
   }
@@ -168,7 +224,9 @@ export function PracticeMode({ opening, trap, onBack, onChooseAnother, onComplet
                 {status === 'wrong' ? (
                   <>
                     <span className="text-red-400 text-lg">✗</span>
-                    <span className="font-body text-sm font-medium text-red-300">Not quite — try again</span>
+                    <span className="font-body text-sm font-medium text-red-300">
+                      {lastMistake ? `Not quite — ${lastMistake}` : 'Not quite — try again.'}
+                    </span>
                   </>
                 ) : lastCorrect ? (
                   <>
@@ -197,8 +255,9 @@ export function PracticeMode({ opening, trap, onBack, onChooseAnother, onComplet
               <Chessboard
                 position={fen}
                 onPieceDrop={onDrop}
+                onSquareClick={onSquareClick}
                 boardOrientation={isWhite ? 'white' : 'black'}
-                arePiecesDraggable={isUserTurn && (status === 'waiting' || status === 'wrong')}
+                arePiecesDraggable={canMoveNow}
                 customSquareStyles={squareStyles}
                 customArrows={customArrows}
                 customArrowColor="#f0c040"
@@ -225,7 +284,9 @@ export function PracticeMode({ opening, trap, onBack, onChooseAnother, onComplet
           <div className="space-y-5 animate-fade-in">
             {/* Progress */}
             <div className="bg-ink-800 border border-ink-700 rounded-2xl p-5">
-              <p className="font-body text-xs text-ivory-500 mb-1">{trap ? 'Trap' : 'Opening'}</p>
+              <p className="font-body text-xs text-ivory-500 mb-1">
+                {trap ? 'Trap' : isEssentials ? 'Essentials · first moves' : 'Opening'}
+              </p>
               <h2 className="font-display text-lg font-semibold text-ivory-100 mb-4">{title}</h2>
               <ProgressBar current={progressMoves} total={totalMoves} />
               <p className="font-body text-xs text-ivory-500 mt-2 text-right">
@@ -285,11 +346,13 @@ export function PracticeMode({ opening, trap, onBack, onChooseAnother, onComplet
 interface SuccessScreenProps {
   opening: Opening
   trap?: TrapLine | null
+  recorded: boolean
+  isEssentials: boolean
   onAgain: () => void
   onChooseAnother: () => void
 }
 
-function SuccessScreen({ opening, trap, onAgain, onChooseAnother }: SuccessScreenProps) {
+function SuccessScreen({ opening, trap, recorded, isEssentials, onAgain, onChooseAnother }: SuccessScreenProps) {
   return (
     <div className="min-h-screen bg-ink-950 flex flex-col items-center justify-center px-4 text-center animate-fade-in">
       <div className="text-7xl mb-6 animate-pop">{trap ? '🎯' : '♛'}</div>
@@ -303,6 +366,8 @@ function SuccessScreen({ opening, trap, onAgain, onChooseAnother }: SuccessScree
       <p className="font-body text-base text-ivory-400 max-w-md mb-6">
         {trap ? (
           <>You sprang the <span className="text-ivory-200 font-medium">{trap.name}</span>.</>
+        ) : isEssentials ? (
+          <>You've got the <span className="text-ivory-200 font-medium">essentials</span> of the {opening.name}. Ready for the full line?</>
         ) : (
           <>You've completed the <span className="text-ivory-200 font-medium">{opening.name}</span>.</>
         )}
@@ -318,7 +383,7 @@ function SuccessScreen({ opening, trap, onAgain, onChooseAnother }: SuccessScree
         </p>
       </div>
 
-      {!trap && (
+      {recorded && (
         <p className="font-body text-sm text-ivory-500 mb-8">
           ✓ Saved to your progress · scheduled for spaced review
         </p>

@@ -9,6 +9,7 @@ export function App() {
   const [view, setView] = useState<AppView>('home')
   const [selectedOpening, setSelectedOpening] = useState<Opening | null>(null)
   const [selectedTrap, setSelectedTrap] = useState<TrapLine | null>(null)
+  const [maxMoves, setMaxMoves] = useState<number | undefined>(undefined)
   const progress = useProgress()
 
   function handleSelectOpening(opening: Opening) {
@@ -16,13 +17,15 @@ export function App() {
     setView('opening')
   }
 
-  function handleStartPractice() {
+  function handleStartPractice(limit?: number) {
     setSelectedTrap(null)
+    setMaxMoves(limit)
     setView('practice')
   }
 
   function handleStartTrap(trap: TrapLine) {
     setSelectedTrap(trap)
+    setMaxMoves(undefined)
     setView('practice')
   }
 
@@ -55,6 +58,7 @@ export function App() {
       <PracticeMode
         opening={selectedOpening}
         trap={selectedTrap}
+        maxMoves={maxMoves}
         onBack={handleBackToOpening}
         onChooseAnother={handleGoHome}
         onCompleted={progress.recordCompletion}

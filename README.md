@@ -9,6 +9,9 @@ A Duolingo-style chess opening trainer for beginners (0–1200 Elo). Learn the m
 - **Per-move explanations** — every move comes with a one-line "why," in both the demo and practice, so beginners *understand* rather than just memorize
 - **Animated demo** — watch the opening play out, step through it, or click any move to jump to it
 - **Two-stage hint system** — first highlights the piece, then shows the target square with an arrow, so players never get stuck
+- **"Why was that wrong?"** — a wrong move is analyzed with chess.js and, if it drops material, explains the punishment (e.g. *"Black plays Nxa6 and wins your bishop"*) — teaching the #1 beginner skill of not hanging pieces
+- **Click-to-move** — tap a piece then tap its destination (with legal-move dots), alongside drag-and-drop — friendlier on mobile and trackpads
+- **Progressive stages** — learn an opening's "essentials" (first few moves) before committing the full line
 - **Move sounds** — distinct audio for moves, captures, checks, success, and errors (toggleable)
 - **Traps & Tricks** — practice famous beginner traps (Fried Liver, Noah's Ark, Elephant) and learn to punish common mistakes
 - **Progress + spaced repetition** — completions are saved to `localStorage`, openings are scheduled for review (SM-2), and the home screen shows a streak, learned count, and "due for review" badges
@@ -42,6 +45,8 @@ src/
 │   └── ProgressBar.tsx   # Animated progress bar
 ├── data/
 │   └── openings.ts       # All opening definitions: moves, per-move notes, tips, plan, traps
+├── lib/
+│   └── analyzeMistake.ts # Explains why a wrong move drops material (one-ply heuristic)
 ├── hooks/
 │   ├── usePractice.ts    # Core practice logic: move validation, auto-play, hints, events
 │   ├── useDemo.ts        # Animated opening playback (play/pause/step/jump)

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { Chess } from 'chess.js'
 import type { Move } from 'chess.js'
 import type { PracticeStatus } from '../types'
+import { analyzeMistake } from '../lib/analyzeMistake'
 
 export interface PracticeConfig {
   moves: string[]
@@ -28,6 +29,7 @@ interface UsePracticeReturn {
   repetitions: number
   isUserTurn: boolean
   lastMove: HintSquares | null
+  lastMistake: string | null
   makeMove: (from: string, to: string, promotion?: string) => boolean
   getHint: () => HintSquares | null
   restart: () => void
@@ -40,6 +42,7 @@ export function usePractice(config: PracticeConfig, events?: PracticeEvents): Us
   const [status, setStatus] = useState<PracticeStatus>('waiting')
   const [repetitions, setRepetitions] = useState(0)
   const [lastMove, setLastMove] = useState<HintSquares | null>(null)
+  const [lastMistake, setLastMistake] = useState<string | null>(null)
   const autoPlayRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Keep callbacks in a ref so the effect/handlers never go stale or re-subscribe.
@@ -103,11 +106,13 @@ export function usePractice(config: PracticeConfig, events?: PracticeEvents): Us
 
       if (result.san !== moves[currentMoveIndex]) {
         setStatus('wrong')
+        setLastMistake(analyzeMistake(game.fen(), from, to, promotion))
         eventsRef.current?.onWrong?.()
         return false
       }
 
       setGame(temp)
+      setLastMistake(null)
       setLastMove({ from: result.from, to: result.to })
       eventsRef.current?.onCorrect?.(result)
       const nextIndex = currentMoveIndex + 1
@@ -140,6 +145,7 @@ export function usePractice(config: PracticeConfig, events?: PracticeEvents): Us
     setCurrentMoveIndex(0)
     setStatus('waiting')
     setLastMove(null)
+    setLastMistake(null)
   }, [])
 
   return {
@@ -150,6 +156,7 @@ export function usePractice(config: PracticeConfig, events?: PracticeEvents): Us
     repetitions,
     isUserTurn: isUserTurn(currentMoveIndex),
     lastMove,
+    lastMistake,
     makeMove,
     getHint,
     restart,
