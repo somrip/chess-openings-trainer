@@ -107,6 +107,39 @@ export const openingExtras: Record<string, OpeningExtras> = {
       { square: 'c6', glyph: '♞', piece: 'Knight', note: 'Knight to c6 hits d4 and supports the centre.' },
     ],
   },
+  'vienna-game': {
+    structure: {
+      name: 'Open game with an f4 break',
+      idea: 'A flexible king\'s-pawn battle where White\'s trump is the f4 push. Your plan: develop, castle, then play f4 to open the f-file and attack toward f7.',
+    },
+    pieceGuide: [
+      { square: 'c4', glyph: '♗', piece: 'Bishop', note: 'Targets the weak f7 square.' },
+      { square: 'c3', glyph: '♘', piece: 'Knight', note: 'Developed first in the Vienna, supporting e4.' },
+      { square: 'f4', glyph: '♙', piece: 'Pawn', note: 'The f4 break is the opening\'s main attacking idea.' },
+    ],
+  },
+  'kings-gambit': {
+    structure: {
+      name: 'Open lines, half-open f-file',
+      idea: 'You give a pawn for speed and attacking lines. Your plan: develop fast, castle, and pile down the half-open f-file at f7 before Black gets organised.',
+    },
+    pieceGuide: [
+      { square: 'f3', glyph: '♘', piece: 'Knight', note: 'Develops and stops the annoying …Qh4+.' },
+      { square: 'c4', glyph: '♗', piece: 'Bishop', note: 'Joins the attack on f7.' },
+      { square: 'f1', glyph: '♖', piece: 'Rook', note: 'After castling, the rook attacks down the half-open f-file.' },
+    ],
+  },
+  'slav-defense': {
+    structure: {
+      name: 'Solid d5 chain, free bishop',
+      idea: 'You support d5 with …c6 but, crucially, keep the light bishop free (unlike the QGD). Your plan: develop the bishop to f5, castle, and break with …c5 or …e5.',
+    },
+    pieceGuide: [
+      { square: 'f5', glyph: '♝', piece: 'Bishop', note: 'Get the light bishop OUT to f5 — the whole point of the Slav.' },
+      { square: 'c6', glyph: '♟', piece: 'Pawn', note: 'Supports d5 without blocking the bishop.' },
+      { square: 'e6', glyph: '♟', piece: 'Pawn', note: 'Played only after the bishop is outside, opening the dark bishop.' },
+    ],
+  },
 }
 
 export const getExtras = (id: string): OpeningExtras | undefined => openingExtras[id]

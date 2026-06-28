@@ -5,6 +5,7 @@ import type { Square, Move } from 'chess.js'
 import { NavBar } from '../components/NavBar'
 import { useSound } from '../hooks/useSound'
 import { chooseBotMove } from '../lib/simpleBot'
+import type { BotDifficulty } from '../lib/simpleBot'
 
 interface FreePlayProps {
   startFen: string
@@ -28,6 +29,8 @@ export function FreePlay({ startFen, side, openingName, onBack, onHome }: FreePl
   // Full position history so we can take moves back.
   const [history, setHistory] = useState<Ply[]>(() => [{ fen: startFen, lastMove: null }])
   const [selected, setSelected] = useState<Square | null>(null)
+  const [difficulty, setDifficulty] = useState<BotDifficulty>('medium')
+  const [hint, setHint] = useState<{ from: string; to: string } | null>(null)
   const botTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const current = history[history.length - 1]
@@ -48,7 +51,7 @@ export function FreePlay({ startFen, side, openingName, onBack, onHome }: FreePl
   useEffect(() => {
     if (isGameOver || game.turn() === userColor) return
     botTimer.current = setTimeout(() => {
-      const move = chooseBotMove(current.fen)
+      const move = chooseBotMove(current.fen, difficulty)
       if (!move) return
       const next = new Chess(current.fen)
       const res = next.move({ from: move.from, to: move.to, promotion: move.promotion })
@@ -60,7 +63,16 @@ export function FreePlay({ startFen, side, openingName, onBack, onHome }: FreePl
     return () => {
       if (botTimer.current) clearTimeout(botTimer.current)
     }
-  }, [current.fen, userColor, isGameOver]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [current.fen, userColor, isGameOver, difficulty]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Clear any shown hint once the position changes.
+  useEffect(() => setHint(null), [current.fen])
+
+  function showHint() {
+    if (!isUserTurn) return
+    const move = chooseBotMove(current.fen, 'hard')
+    if (move) setHint({ from: move.from, to: move.to })
+  }
 
   function userMove(from: Square, to: Square): boolean {
     if (!isUserTurn) return false
@@ -134,6 +146,14 @@ export function FreePlay({ startFen, side, openingName, onBack, onHome }: FreePl
       }
     }
   }
+  if (hint) {
+    squareStyles[hint.from] = {
+      ...squareStyles[hint.from],
+      background: 'rgba(74,124,89,0.55)',
+      boxShadow: 'inset 0 0 0 3px rgba(240,192,64,0.9)',
+    }
+  }
+  const hintArrows: Array<[Square, Square]> = hint ? [[hint.from as Square, hint.to as Square]] : []
 
   // Result text.
   let result: { title: string; sub: string; icon: string } | null = null
@@ -195,6 +215,8 @@ export function FreePlay({ startFen, side, openingName, onBack, onHome }: FreePl
                 boardOrientation={isWhite ? 'white' : 'black'}
                 arePiecesDraggable={isUserTurn}
                 customSquareStyles={squareStyles}
+                customArrows={hintArrows}
+                customArrowColor="#f0c040"
                 customDarkSquareStyle={{ backgroundColor: '#4a7c59' }}
                 customLightSquareStyle={{ backgroundColor: '#f0d9b5' }}
                 customBoardStyle={{ borderRadius: '0' }}
@@ -207,8 +229,36 @@ export function FreePlay({ startFen, side, openingName, onBack, onHome }: FreePl
               <p className="font-body text-xs text-ivory-500 mb-1">Continuing from</p>
               <h2 className="font-display text-lg font-semibold text-ivory-100 mb-1">{openingName}</h2>
               <p className="font-body text-sm text-ivory-400">
-                You play <span className="text-ivory-200">{isWhite ? 'White' : 'Black'}</span> against a deliberately
-                weak bot. Try to convert your opening into a win.
+                You play <span className="text-ivory-200">{isWhite ? 'White' : 'Black'}</span> against a practice bot.
+                Try to convert your opening into a win.
+              </p>
+            </div>
+
+            {/* Difficulty + hint */}
+            <div className="bg-ink-800 border border-ink-700 rounded-2xl p-5">
+              <p className="font-body text-xs text-ivory-500 mb-2">Bot difficulty</p>
+              <div className="flex p-1 rounded-xl bg-ink-900 border border-ink-700 gap-1 mb-4">
+                {(['easy', 'medium', 'hard'] as const).map((d) => (
+                  <button
+                    key={d}
+                    onClick={() => setDifficulty(d)}
+                    className={`flex-1 capitalize font-body text-xs font-medium py-2 rounded-lg transition-colors duration-150 focus-visible:outline-none ${
+                      difficulty === d ? 'bg-gold-500 text-ink-950' : 'text-ivory-400 hover:text-ivory-100'
+                    }`}
+                  >
+                    {d}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={showHint}
+                disabled={!isUserTurn}
+                className="w-full font-body text-sm font-medium text-ink-950 bg-gold-500 hover:bg-gold-400 disabled:opacity-40 disabled:pointer-events-none rounded-xl py-2.5 transition-all duration-200 focus-visible:outline-none"
+              >
+                💡 Show a hint
+              </button>
+              <p className="font-body text-[11px] text-ivory-600 mt-2 leading-relaxed">
+                The hint suggests a solid move — it won't always be the very best.
               </p>
             </div>
 

@@ -20,7 +20,7 @@ A Duolingo-style chess opening trainer for beginners (0–1200 Elo). Learn the m
 - **Strategic plan on completion** — the success screen tells you what to do once the opening is over
 - **Pawn-structure & plan lessons** — each opening explains the structure it produces and the resulting middlegame plan
 - **Piece-placement guide** — a mini-board highlighting where your key pieces ideally belong, with a why for each
-- **Play on vs the computer** — after finishing, continue from the final position against a built-in weak bot to bridge into a real middlegame
+- **Play on vs the computer** — after finishing, continue from the final position against a built-in bot to bridge into a real middlegame, with **Easy/Medium/Hard difficulty**, a **hint** button, and **take-back**
 
 ## Tech Stack
 
@@ -76,6 +76,9 @@ that each move's explanation array lines up with its moves.
 
 ## Openings Included
 
+Every opening includes per-move explanations, a structure/plan lesson, a piece-placement
+guide, and at least one trap or deviation to practice.
+
 | Opening | Side | ECO |
 |---|---|---|
 | Italian Game | White | C50 |
@@ -83,10 +86,13 @@ that each move's explanation array lines up with its moves.
 | Queen's Gambit | White | D06 |
 | London System | White | D02 |
 | Scotch Game | White | C45 |
+| Vienna Game | White | C25 |
+| King's Gambit | White | C30 |
 | Caro-Kann Defense | Black | B12 |
 | French Defense | Black | C11 |
 | Sicilian Defense (Najdorf) | Black | B90 |
 | Scandinavian Defense | Black | B01 |
+| Slav Defense | Black | D10 |
 
 ## Adding New Openings
 
