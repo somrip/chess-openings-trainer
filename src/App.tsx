@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { Opening, AppView, TrapLine } from './types'
+import type { Opening, AppView, BranchLine } from './types'
 import { Home } from './pages/Home'
 import { OpeningPage } from './pages/OpeningPage'
 import { PracticeMode } from './pages/PracticeMode'
@@ -8,7 +8,7 @@ import { useProgress } from './hooks/useProgress'
 export function App() {
   const [view, setView] = useState<AppView>('home')
   const [selectedOpening, setSelectedOpening] = useState<Opening | null>(null)
-  const [selectedTrap, setSelectedTrap] = useState<TrapLine | null>(null)
+  const [selectedBranch, setSelectedBranch] = useState<BranchLine | null>(null)
   const [maxMoves, setMaxMoves] = useState<number | undefined>(undefined)
   const progress = useProgress()
 
@@ -18,13 +18,13 @@ export function App() {
   }
 
   function handleStartPractice(limit?: number) {
-    setSelectedTrap(null)
+    setSelectedBranch(null)
     setMaxMoves(limit)
     setView('practice')
   }
 
-  function handleStartTrap(trap: TrapLine) {
-    setSelectedTrap(trap)
+  function handleStartBranch(branch: BranchLine) {
+    setSelectedBranch(branch)
     setMaxMoves(undefined)
     setView('practice')
   }
@@ -32,11 +32,11 @@ export function App() {
   function handleGoHome() {
     setView('home')
     setSelectedOpening(null)
-    setSelectedTrap(null)
+    setSelectedBranch(null)
   }
 
   function handleBackToOpening() {
-    setSelectedTrap(null)
+    setSelectedBranch(null)
     setView('opening')
   }
 
@@ -47,7 +47,7 @@ export function App() {
         progress={progress.getProgress(selectedOpening.id)}
         isDue={progress.isDue(selectedOpening.id)}
         onStartPractice={handleStartPractice}
-        onStartTrap={handleStartTrap}
+        onStartBranch={handleStartBranch}
         onBack={handleGoHome}
       />
     )
@@ -57,7 +57,7 @@ export function App() {
     return (
       <PracticeMode
         opening={selectedOpening}
-        trap={selectedTrap}
+        branch={selectedBranch}
         maxMoves={maxMoves}
         onBack={handleBackToOpening}
         onChooseAnother={handleGoHome}

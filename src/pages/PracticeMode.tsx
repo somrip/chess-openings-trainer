@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Chessboard } from 'react-chessboard'
 import { Chess } from 'chess.js'
 import type { Square, Move } from 'chess.js'
-import type { Opening, TrapLine } from '../types'
+import type { Opening, BranchLine } from '../types'
 import { usePractice } from '../hooks/usePractice'
 import { useSound } from '../hooks/useSound'
 import { ProgressBar } from '../components/ProgressBar'
@@ -10,7 +10,8 @@ import { NavBar } from '../components/NavBar'
 
 interface PracticeModeProps {
   opening: Opening
-  trap?: TrapLine | null
+  /** A trap or deviation branch, instead of the opening's main line */
+  branch?: BranchLine | null
   /** When set, practice only the first N half-moves (the "essentials" stage). */
   maxMoves?: number
   onBack: () => void
@@ -18,15 +19,15 @@ interface PracticeModeProps {
   onCompleted: (openingId: string) => void
 }
 
-export function PracticeMode({ opening, trap, maxMoves, onBack, onChooseAnother, onCompleted }: PracticeModeProps) {
-  const baseMoves = trap ? trap.moves : opening.moves
-  const isEssentials = !trap && typeof maxMoves === 'number' && maxMoves < baseMoves.length
+export function PracticeMode({ opening, branch, maxMoves, onBack, onChooseAnother, onCompleted }: PracticeModeProps) {
+  const baseMoves = branch ? branch.moves : opening.moves
+  const isEssentials = !branch && typeof maxMoves === 'number' && maxMoves < baseMoves.length
   const moves = isEssentials ? baseMoves.slice(0, maxMoves) : baseMoves
-  const side = trap ? trap.side : opening.side
-  const notes = (trap ? trap.moveNotes : opening.moveNotes) ?? []
-  const title = trap ? `${opening.name}: ${trap.name}` : opening.name
+  const side = branch ? branch.side : opening.side
+  const notes = (branch ? branch.moveNotes : opening.moveNotes) ?? []
+  const title = branch ? `${opening.name}: ${branch.name}` : opening.name
   // Only a full main-line completion counts toward learned/spaced-repetition.
-  const recordsProgress = !trap && !isEssentials
+  const recordsProgress = !branch && !isEssentials
   const isWhite = side === 'white'
 
   const [soundOn, setSoundOn] = useState(true)
@@ -119,7 +120,7 @@ export function PracticeMode({ opening, trap, maxMoves, onBack, onChooseAnother,
     return (
       <SuccessScreen
         opening={opening}
-        trap={trap}
+        branch={branch}
         recorded={recordsProgress}
         isEssentials={isEssentials}
         onAgain={handleRestart}
@@ -197,11 +198,13 @@ export function PracticeMode({ opening, trap, maxMoves, onBack, onChooseAnother,
           </button>
         </div>
 
-        {trap && (
+        {branch && (
           <div className="mb-4 rounded-xl border border-gold-500/30 bg-gold-500/5 px-4 py-3">
             <p className="font-body text-sm text-ivory-300 leading-relaxed">
-              <span className="text-gold-400 font-medium">Trap · {trap.name} — </span>
-              {trap.setup}
+              <span className="text-gold-400 font-medium">
+                {branch.kind === 'trap' ? 'Trap' : 'Deviation'} · {branch.name} —{' '}
+              </span>
+              {branch.setup}
             </p>
           </div>
         )}
@@ -285,7 +288,7 @@ export function PracticeMode({ opening, trap, maxMoves, onBack, onChooseAnother,
             {/* Progress */}
             <div className="bg-ink-800 border border-ink-700 rounded-2xl p-5">
               <p className="font-body text-xs text-ivory-500 mb-1">
-                {trap ? 'Trap' : isEssentials ? 'Essentials · first moves' : 'Opening'}
+                {branch ? (branch.kind === 'trap' ? 'Trap' : 'Deviation') : isEssentials ? 'Essentials · first moves' : 'Opening'}
               </p>
               <h2 className="font-display text-lg font-semibold text-ivory-100 mb-4">{title}</h2>
               <ProgressBar current={progressMoves} total={totalMoves} />
@@ -345,27 +348,31 @@ export function PracticeMode({ opening, trap, maxMoves, onBack, onChooseAnother,
 
 interface SuccessScreenProps {
   opening: Opening
-  trap?: TrapLine | null
+  branch?: BranchLine | null
   recorded: boolean
   isEssentials: boolean
   onAgain: () => void
   onChooseAnother: () => void
 }
 
-function SuccessScreen({ opening, trap, recorded, isEssentials, onAgain, onChooseAnother }: SuccessScreenProps) {
+function SuccessScreen({ opening, branch, recorded, isEssentials, onAgain, onChooseAnother }: SuccessScreenProps) {
+  const isTrap = branch?.kind === 'trap'
+  const isDeviation = branch?.kind === 'deviation'
   return (
     <div className="min-h-screen bg-ink-950 flex flex-col items-center justify-center px-4 text-center animate-fade-in">
-      <div className="text-7xl mb-6 animate-pop">{trap ? '🎯' : '♛'}</div>
+      <div className="text-7xl mb-6 animate-pop">{isTrap ? '🎯' : isDeviation ? '🧭' : '♛'}</div>
 
       <p className="font-body text-sm font-medium text-gold-400 tracking-widest uppercase mb-3">
-        {trap ? 'Trap Mastered' : 'Opening Complete'}
+        {isTrap ? 'Trap Mastered' : isDeviation ? 'Deviation Handled' : 'Opening Complete'}
       </p>
 
       <h1 className="font-display text-4xl sm:text-5xl font-bold text-ivory-100 mb-4">Well played!</h1>
 
       <p className="font-body text-base text-ivory-400 max-w-md mb-6">
-        {trap ? (
-          <>You sprang the <span className="text-ivory-200 font-medium">{trap.name}</span>.</>
+        {isTrap ? (
+          <>You sprang the <span className="text-ivory-200 font-medium">{branch!.name}</span>.</>
+        ) : isDeviation ? (
+          <>You handled <span className="text-ivory-200 font-medium">{branch!.name}</span> correctly.</>
         ) : isEssentials ? (
           <>You've got the <span className="text-ivory-200 font-medium">essentials</span> of the {opening.name}. Ready for the full line?</>
         ) : (
@@ -373,13 +380,13 @@ function SuccessScreen({ opening, trap, recorded, isEssentials, onAgain, onChoos
         )}
       </p>
 
-      {/* Takeaway: trap payoff or opening plan */}
+      {/* Takeaway: branch payoff or opening plan */}
       <div className="max-w-md mb-8 rounded-2xl border border-ink-700 bg-ink-800 px-6 py-4">
         <p className="font-body text-xs text-gold-400 uppercase tracking-wider mb-2">
-          {trap ? 'The lesson' : 'Your plan from here'}
+          {branch ? 'The lesson' : 'Your plan from here'}
         </p>
         <p className="font-body text-sm text-ivory-300 leading-relaxed">
-          {trap ? trap.payoff : opening.plan}
+          {branch ? branch.payoff : opening.plan}
         </p>
       </div>
 

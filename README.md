@@ -14,6 +14,7 @@ A Duolingo-style chess opening trainer for beginners (0–1200 Elo). Learn the m
 - **Progressive stages** — learn an opening's "essentials" (first few moves) before committing the full line
 - **Move sounds** — distinct audio for moves, captures, checks, success, and errors (toggleable)
 - **Traps & Tricks** — practice famous beginner traps (Fried Liver, Noah's Ark, Elephant) and learn to punish common mistakes
+- **"If they go off-book" deviations** — practice the correct response when the opponent leaves the main line (e.g. the Blackburne Shilling try, a queen-harassing pawn lunge, the Exchange French), so a surprise on move 3 doesn't end the game
 - **Progress + spaced repetition** — completions are saved to `localStorage`, openings are scheduled for review (SM-2), and the home screen shows a streak, learned count, and "due for review" badges
 - **Instant feedback** — wrong moves shake and prompt a retry; correct moves advance automatically
 - **Strategic plan on completion** — the success screen tells you what to do once the opening is over

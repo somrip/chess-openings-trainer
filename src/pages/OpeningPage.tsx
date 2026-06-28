@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Chessboard } from 'react-chessboard'
-import type { Opening, OpeningProgress, TrapLine } from '../types'
+import type { Opening, OpeningProgress, BranchLine } from '../types'
 import { NavBar } from '../components/NavBar'
 import { useDemo } from '../hooks/useDemo'
 
@@ -9,11 +9,11 @@ interface OpeningPageProps {
   progress?: OpeningProgress
   isDue: boolean
   onStartPractice: (limit?: number) => void
-  onStartTrap: (trap: TrapLine) => void
+  onStartBranch: (branch: BranchLine) => void
   onBack: () => void
 }
 
-export function OpeningPage({ opening, progress, isDue, onStartPractice, onStartTrap, onBack }: OpeningPageProps) {
+export function OpeningPage({ opening, progress, isDue, onStartPractice, onStartBranch, onBack }: OpeningPageProps) {
   const isWhite = opening.side === 'white'
   const moveCount = Math.ceil(opening.moves.length / 2)
   const demo = useDemo(opening)
@@ -131,35 +131,24 @@ export function OpeningPage({ opening, progress, isDue, onStartPractice, onStart
             </button>
 
             {/* Traps */}
-            {opening.traps && opening.traps.length > 0 && (
-              <div className="mt-8">
-                <h2 className="font-display text-base font-semibold text-ivory-100 mb-1 flex items-center gap-2">
-                  <span className="text-gold-400">🎯</span> Traps &amp; Tricks
-                </h2>
-                <p className="font-body text-sm text-ivory-500 mb-4">
-                  Common mistakes opponents make — and how to punish them.
-                </p>
-                <div className="space-y-3">
-                  {opening.traps.map((trap) => (
-                    <div key={trap.id} className="bg-ink-800 border border-ink-700 rounded-xl p-4">
-                      <div className="flex items-start justify-between gap-3 mb-2">
-                        <h3 className="font-display text-sm font-semibold text-ivory-100">{trap.name}</h3>
-                        <span className="flex-shrink-0 font-body text-[10px] uppercase tracking-wide text-ivory-500 border border-ink-600 rounded-full px-2 py-0.5">
-                          Play as {trap.side}
-                        </span>
-                      </div>
-                      <p className="font-body text-xs text-ivory-400 leading-relaxed mb-3">{trap.setup}</p>
-                      <button
-                        onClick={() => onStartTrap(trap)}
-                        className="font-body text-xs font-medium text-gold-300 hover:text-gold-200 border border-gold-500/30 hover:border-gold-500/60 rounded-lg px-3 py-1.5 transition-colors duration-200 focus-visible:outline-none"
-                      >
-                        Practice this trap →
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+            <BranchSection
+              icon="🎯"
+              title="Traps & Tricks"
+              blurb="Mistakes opponents make — and how to punish them."
+              cta="Practice this trap"
+              branches={opening.traps}
+              onStart={onStartBranch}
+            />
+
+            {/* Deviations */}
+            <BranchSection
+              icon="🧭"
+              title="If They Go Off-Book"
+              blurb="What to do when your opponent leaves the main line."
+              cta="Practice this line"
+              branches={opening.deviations}
+              onStart={onStartBranch}
+            />
           </div>
 
           {/* Right: Demo board */}
@@ -248,6 +237,51 @@ export function OpeningPage({ opening, progress, isDue, onStartPractice, onStart
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  )
+}
+
+function BranchSection({
+  icon,
+  title,
+  blurb,
+  cta,
+  branches,
+  onStart,
+}: {
+  icon: string
+  title: string
+  blurb: string
+  cta: string
+  branches?: BranchLine[]
+  onStart: (b: BranchLine) => void
+}) {
+  if (!branches || branches.length === 0) return null
+  return (
+    <div className="mt-8">
+      <h2 className="font-display text-base font-semibold text-ivory-100 mb-1 flex items-center gap-2">
+        <span className="text-gold-400">{icon}</span> {title}
+      </h2>
+      <p className="font-body text-sm text-ivory-500 mb-4">{blurb}</p>
+      <div className="space-y-3">
+        {branches.map((b) => (
+          <div key={b.id} className="bg-ink-800 border border-ink-700 rounded-xl p-4">
+            <div className="flex items-start justify-between gap-3 mb-2">
+              <h3 className="font-display text-sm font-semibold text-ivory-100">{b.name}</h3>
+              <span className="flex-shrink-0 font-body text-[10px] uppercase tracking-wide text-ivory-500 border border-ink-600 rounded-full px-2 py-0.5">
+                Play as {b.side}
+              </span>
+            </div>
+            <p className="font-body text-xs text-ivory-400 leading-relaxed mb-3">{b.setup}</p>
+            <button
+              onClick={() => onStart(b)}
+              className="font-body text-xs font-medium text-gold-300 hover:text-gold-200 border border-gold-500/30 hover:border-gold-500/60 rounded-lg px-3 py-1.5 transition-colors duration-200 focus-visible:outline-none"
+            >
+              {cta} →
+            </button>
+          </div>
+        ))}
       </div>
     </div>
   )

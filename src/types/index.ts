@@ -1,7 +1,13 @@
-export interface TrapLine {
+/**
+ * A branch line off an opening, practiced as a fixed sequence — either a trap
+ * the user springs, or a deviation showing how to handle an off-book opponent.
+ */
+export interface BranchLine {
   id: string
   name: string
-  /** Which side the user plays in this trap (may differ from the opening) */
+  /** 'trap' = the user springs it; 'deviation' = handling an off-book opponent */
+  kind: 'trap' | 'deviation'
+  /** Which side the user plays in this line (may differ from the opening) */
   side: 'white' | 'black'
   /** Shown to set the scene, e.g. "Black greedily grabs the pawn…" */
   setup: string
@@ -12,6 +18,9 @@ export interface TrapLine {
   /** The lesson / payoff explained after completion */
   payoff: string
 }
+
+/** @deprecated use BranchLine */
+export type TrapLine = BranchLine
 
 export interface Opening {
   id: string
@@ -26,8 +35,10 @@ export interface Opening {
   /** One-line strategic goal once the opening is finished */
   plan: string
   eco?: string
-  /** Common beginner traps / deviations tied to this opening */
-  traps?: TrapLine[]
+  /** Traps the user can spring (kind: 'trap') */
+  traps?: BranchLine[]
+  /** How to respond when the opponent goes off-book (kind: 'deviation') */
+  deviations?: BranchLine[]
 }
 
 export type AppView = 'home' | 'opening' | 'practice'

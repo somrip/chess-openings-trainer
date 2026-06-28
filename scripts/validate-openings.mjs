@@ -25,7 +25,10 @@ function checkLine(label, moves, notes) {
 for (const o of openings) {
   checkLine(`${o.name} [main]`, o.moves, o.moveNotes)
   for (const t of o.traps ?? []) {
-    checkLine(`${o.name} → ${t.name}`, t.moves, t.moveNotes)
+    checkLine(`${o.name} → trap: ${t.name}`, t.moves, t.moveNotes)
+  }
+  for (const d of o.deviations ?? []) {
+    checkLine(`${o.name} → deviation: ${d.name}`, d.moves, d.moveNotes)
   }
 }
 
