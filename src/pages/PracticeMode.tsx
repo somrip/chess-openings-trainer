@@ -19,7 +19,6 @@ export function PracticeMode({ opening, onBack, onChooseAnother }: PracticeModeP
   const [shakeKey, setShakeKey] = useState(0)
   const [lastCorrect, setLastCorrect] = useState(false)
 
-  const moveNumber = Math.floor(currentMoveIndex / 2) + 1
   const totalHalfMoves = totalMoves
   const isWhite = opening.side === 'white'
 
