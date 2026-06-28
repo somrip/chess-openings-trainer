@@ -3,6 +3,7 @@ import type { Opening, AppView, BranchLine } from './types'
 import { Home } from './pages/Home'
 import { OpeningPage } from './pages/OpeningPage'
 import { PracticeMode } from './pages/PracticeMode'
+import { FreePlay } from './pages/FreePlay'
 import { useProgress } from './hooks/useProgress'
 
 export function App() {
@@ -10,6 +11,7 @@ export function App() {
   const [selectedOpening, setSelectedOpening] = useState<Opening | null>(null)
   const [selectedBranch, setSelectedBranch] = useState<BranchLine | null>(null)
   const [maxMoves, setMaxMoves] = useState<number | undefined>(undefined)
+  const [playState, setPlayState] = useState<{ fen: string; side: 'white' | 'black' } | null>(null)
   const progress = useProgress()
 
   function handleSelectOpening(opening: Opening) {
@@ -40,6 +42,11 @@ export function App() {
     setView('opening')
   }
 
+  function handlePlayOn(fen: string, playSide: 'white' | 'black') {
+    setPlayState({ fen, side: playSide })
+    setView('play')
+  }
+
   if (view === 'opening' && selectedOpening) {
     return (
       <OpeningPage
@@ -62,6 +69,19 @@ export function App() {
         onBack={handleBackToOpening}
         onChooseAnother={handleGoHome}
         onCompleted={progress.recordCompletion}
+        onPlayOn={handlePlayOn}
+      />
+    )
+  }
+
+  if (view === 'play' && selectedOpening && playState) {
+    return (
+      <FreePlay
+        startFen={playState.fen}
+        side={playState.side}
+        openingName={selectedOpening.name}
+        onBack={() => setView('practice')}
+        onHome={handleGoHome}
       />
     )
   }

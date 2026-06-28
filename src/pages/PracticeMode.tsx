@@ -17,9 +17,10 @@ interface PracticeModeProps {
   onBack: () => void
   onChooseAnother: () => void
   onCompleted: (openingId: string) => void
+  onPlayOn: (fen: string, side: 'white' | 'black') => void
 }
 
-export function PracticeMode({ opening, branch, maxMoves, onBack, onChooseAnother, onCompleted }: PracticeModeProps) {
+export function PracticeMode({ opening, branch, maxMoves, onBack, onChooseAnother, onCompleted, onPlayOn }: PracticeModeProps) {
   const baseMoves = branch ? branch.moves : opening.moves
   const isEssentials = !branch && typeof maxMoves === 'number' && maxMoves < baseMoves.length
   const moves = isEssentials ? baseMoves.slice(0, maxMoves) : baseMoves
@@ -125,6 +126,7 @@ export function PracticeMode({ opening, branch, maxMoves, onBack, onChooseAnothe
         isEssentials={isEssentials}
         onAgain={handleRestart}
         onChooseAnother={onChooseAnother}
+        onPlayOn={() => onPlayOn(fen, side)}
       />
     )
   }
@@ -353,9 +355,10 @@ interface SuccessScreenProps {
   isEssentials: boolean
   onAgain: () => void
   onChooseAnother: () => void
+  onPlayOn: () => void
 }
 
-function SuccessScreen({ opening, branch, recorded, isEssentials, onAgain, onChooseAnother }: SuccessScreenProps) {
+function SuccessScreen({ opening, branch, recorded, isEssentials, onAgain, onChooseAnother, onPlayOn }: SuccessScreenProps) {
   const isTrap = branch?.kind === 'trap'
   const isDeviation = branch?.kind === 'deviation'
   return (
@@ -396,10 +399,18 @@ function SuccessScreen({ opening, branch, recorded, isEssentials, onAgain, onCho
         </p>
       )}
 
+      {/* Bridge to a real game */}
+      <button
+        onClick={onPlayOn}
+        className="mb-4 w-full max-w-xs flex items-center justify-center gap-2 bg-gold-500 hover:bg-gold-400 text-ink-950 font-body font-semibold text-sm px-6 py-3.5 rounded-xl transition-all duration-200 hover:shadow-[0_0_24px_rgba(212,165,32,0.4)] focus-visible:outline-none"
+      >
+        ▶ Play on vs the computer
+      </button>
+
       <div className="flex flex-col sm:flex-row gap-3 w-full max-w-xs">
         <button
           onClick={onAgain}
-          className="flex-1 bg-gold-500 hover:bg-gold-400 text-ink-950 font-body font-semibold text-sm px-6 py-3.5 rounded-xl transition-all duration-200 hover:shadow-[0_0_24px_rgba(212,165,32,0.4)] focus-visible:outline-none"
+          className="flex-1 bg-ink-800 hover:bg-ink-700 text-ivory-200 font-body font-medium text-sm px-6 py-3.5 rounded-xl border border-ink-600 hover:border-ink-500 transition-all duration-200 focus-visible:outline-none"
         >
           Practice Again
         </button>

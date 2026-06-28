@@ -18,6 +18,9 @@ A Duolingo-style chess opening trainer for beginners (0–1200 Elo). Learn the m
 - **Progress + spaced repetition** — completions are saved to `localStorage`, openings are scheduled for review (SM-2), and the home screen shows a streak, learned count, and "due for review" badges
 - **Instant feedback** — wrong moves shake and prompt a retry; correct moves advance automatically
 - **Strategic plan on completion** — the success screen tells you what to do once the opening is over
+- **Pawn-structure & plan lessons** — each opening explains the structure it produces and the resulting middlegame plan
+- **Piece-placement guide** — a mini-board highlighting where your key pieces ideally belong, with a why for each
+- **Play on vs the computer** — after finishing, continue from the final position against a built-in weak bot to bridge into a real middlegame
 
 ## Tech Stack
 
@@ -45,9 +48,11 @@ src/
 │   ├── OpeningCard.tsx   # Home page card (with learned / due badges)
 │   └── ProgressBar.tsx   # Animated progress bar
 ├── data/
-│   └── openings.ts       # All opening definitions: moves, per-move notes, tips, plan, traps
+│   ├── openings.ts       # All opening definitions: moves, per-move notes, tips, plan, traps, deviations
+│   └── openingExtras.ts  # Pawn-structure lessons + piece-placement guides, keyed by opening id
 ├── lib/
-│   └── analyzeMistake.ts # Explains why a wrong move drops material (one-ply heuristic)
+│   ├── analyzeMistake.ts # Explains why a wrong move drops material (one-ply heuristic)
+│   └── simpleBot.ts      # Weak, dependency-free opponent for the "play on" mode
 ├── hooks/
 │   ├── usePractice.ts    # Core practice logic: move validation, auto-play, hints, events
 │   ├── useDemo.ts        # Animated opening playback (play/pause/step/jump)
@@ -55,8 +60,9 @@ src/
 │   └── useSound.ts       # Web Audio sound effects (no asset files)
 ├── pages/
 │   ├── Home.tsx          # Opening grid + streak / learned / due-for-review
-│   ├── OpeningPage.tsx   # Detail, animated demo, beginner tips, traps
-│   └── PracticeMode.tsx  # Interactive board, per-move explanations, hints, success
+│   ├── OpeningPage.tsx   # Detail, demo, tips, structure/plan, piece guide, traps, deviations
+│   ├── PracticeMode.tsx  # Interactive board, per-move explanations, hints, success
+│   └── FreePlay.tsx      # "Play on" mode: free play vs the bot from the final position
 ├── types/
 │   └── index.ts          # Shared TypeScript types
 └── App.tsx               # View router (state-based, no library needed)

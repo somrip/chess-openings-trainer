@@ -41,7 +41,32 @@ export interface Opening {
   deviations?: BranchLine[]
 }
 
-export type AppView = 'home' | 'opening' | 'practice'
+/** A short lesson on the pawn structure an opening produces and the plan it implies */
+export interface StructureLesson {
+  /** e.g. "Closed Ruy centre", "Pawn chains (e6–d5 vs e5–d4)" */
+  name: string
+  /** a sentence or two on the structure and the resulting plan */
+  idea: string
+}
+
+/** Where a key piece ideally belongs in this opening */
+export interface PiecePlacement {
+  /** target square, e.g. 'f3' */
+  square: string
+  /** glyph shown on the marker, e.g. '♘' */
+  glyph: string
+  /** short label, e.g. 'Knight' */
+  piece: string
+  /** why it belongs there */
+  note: string
+}
+
+export interface OpeningExtras {
+  structure: StructureLesson
+  pieceGuide: PiecePlacement[]
+}
+
+export type AppView = 'home' | 'opening' | 'practice' | 'play'
 
 export type PracticeStatus = 'idle' | 'waiting' | 'opponent' | 'wrong' | 'complete'
 

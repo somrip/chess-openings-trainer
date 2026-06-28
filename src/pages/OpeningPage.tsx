@@ -3,6 +3,7 @@ import { Chessboard } from 'react-chessboard'
 import type { Opening, OpeningProgress, BranchLine } from '../types'
 import { NavBar } from '../components/NavBar'
 import { useDemo } from '../hooks/useDemo'
+import { getExtras } from '../data/openingExtras'
 
 interface OpeningPageProps {
   opening: Opening
@@ -17,6 +18,7 @@ export function OpeningPage({ opening, progress, isDue, onStartPractice, onStart
   const isWhite = opening.side === 'white'
   const moveCount = Math.ceil(opening.moves.length / 2)
   const demo = useDemo(opening)
+  const extras = getExtras(opening.id)
 
   // Progressive stages: learn the first few moves before the whole line.
   const essentialsLen = Math.min(6, opening.moves.length)
@@ -98,6 +100,59 @@ export function OpeningPage({ opening, progress, isDue, onStartPractice, onStart
                 ))}
               </ul>
             </div>
+
+            {/* Pawn structure & plan */}
+            {extras && (
+              <div className="bg-ink-800 border border-ink-700 rounded-2xl p-5 mb-6">
+                <h2 className="font-display text-sm font-semibold text-ivory-100 mb-2 flex items-center gap-2">
+                  <span className="text-gold-400">♙</span> Pawn Structure &amp; Plan
+                </h2>
+                <p className="font-body text-xs font-medium text-gold-300 mb-1">{extras.structure.name}</p>
+                <p className="font-body text-sm text-ivory-300 leading-relaxed">{extras.structure.idea}</p>
+              </div>
+            )}
+
+            {/* Where your pieces belong */}
+            {extras && (
+              <div className="bg-ink-800 border border-ink-700 rounded-2xl p-5 mb-6">
+                <h2 className="font-display text-sm font-semibold text-ivory-100 mb-4 flex items-center gap-2">
+                  <span className="text-gold-400">◎</span> Where Your Pieces Belong
+                </h2>
+                <div className="grid sm:grid-cols-[180px_1fr] gap-5 items-start">
+                  {/* Mini board with target squares highlighted */}
+                  <div className="rounded-lg overflow-hidden border border-ink-700 max-w-[180px]">
+                    <Chessboard
+                      position="start"
+                      boardOrientation={isWhite ? 'white' : 'black'}
+                      arePiecesDraggable={false}
+                      customSquareStyles={Object.fromEntries(
+                        extras.pieceGuide.map((p) => [
+                          p.square,
+                          { background: 'rgba(240,192,64,0.55)', boxShadow: 'inset 0 0 0 3px rgba(240,192,64,0.9)' },
+                        ]),
+                      )}
+                      customDarkSquareStyle={{ backgroundColor: '#4a7c59' }}
+                      customLightSquareStyle={{ backgroundColor: '#f0d9b5' }}
+                      customBoardStyle={{ borderRadius: '0' }}
+                    />
+                  </div>
+                  <ul className="space-y-3">
+                    {extras.pieceGuide.map((p) => (
+                      <li key={p.square} className="flex gap-3 font-body text-sm text-ivory-300 leading-relaxed">
+                        <span className="flex-shrink-0 text-lg leading-none">{p.glyph}</span>
+                        <span>
+                          <span className="text-ivory-100 font-medium">{p.piece} → {p.square}.</span>{' '}
+                          {p.note}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <p className="font-body text-xs text-ivory-600 mt-4">
+                  Highlighted squares show where your key pieces want to go once the opening is done.
+                </p>
+              </div>
+            )}
 
             {/* Stage selector — learn the essentials first, then the full line */}
             {hasStages && (
