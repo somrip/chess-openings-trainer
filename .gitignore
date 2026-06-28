@@ -31,3 +31,5 @@ npm-debug.log*
 
 # Vite cache
 .vite/
+
+.vercel

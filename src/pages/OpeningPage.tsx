@@ -1,24 +1,28 @@
 import { Chessboard } from 'react-chessboard'
-import type { Opening } from '../types'
+import type { Opening, OpeningProgress, TrapLine } from '../types'
 import { NavBar } from '../components/NavBar'
 import { useDemo } from '../hooks/useDemo'
 
 interface OpeningPageProps {
   opening: Opening
+  progress?: OpeningProgress
+  isDue: boolean
   onStartPractice: () => void
+  onStartTrap: (trap: TrapLine) => void
   onBack: () => void
 }
 
-export function OpeningPage({ opening, onStartPractice, onBack }: OpeningPageProps) {
+export function OpeningPage({ opening, progress, isDue, onStartPractice, onStartTrap, onBack }: OpeningPageProps) {
   const isWhite = opening.side === 'white'
   const moveCount = Math.ceil(opening.moves.length / 2)
   const demo = useDemo(opening)
 
-  // Build move list as pairs: [[w, b], [w, b], ...]
   const movePairs: Array<{ w: string; b?: string; wIdx: number; bIdx: number }> = []
   for (let i = 0; i < opening.moves.length; i += 2) {
     movePairs.push({ w: opening.moves[i], b: opening.moves[i + 1], wIdx: i, bIdx: i + 1 })
   }
+
+  const demoNote = demo.moveIndex > 0 ? opening.moveNotes[demo.moveIndex - 1] : null
 
   return (
     <div className="min-h-screen bg-ink-950 text-ivory-100">
@@ -38,8 +42,7 @@ export function OpeningPage({ opening, onStartPractice, onBack }: OpeningPagePro
         <div className="grid lg:grid-cols-2 gap-10 items-start">
           {/* Left: Info */}
           <div className="animate-slide-up">
-            {/* ECO + Side */}
-            <div className="flex items-center gap-3 mb-4">
+            <div className="flex items-center gap-3 mb-4 flex-wrap">
               {opening.eco && (
                 <span className="font-body text-xs font-medium text-ivory-400 bg-ink-800 border border-ink-600 px-2.5 py-1 rounded-full">
                   ECO {opening.eco}
@@ -49,17 +52,19 @@ export function OpeningPage({ opening, onStartPractice, onBack }: OpeningPagePro
                 <span className={`w-2 h-2 rounded-full ${isWhite ? 'bg-ivory-100' : 'bg-ink-400'}`} />
                 Play as {isWhite ? 'White' : 'Black'}
               </span>
+              {progress && (
+                <span className={`font-body text-xs font-medium px-2.5 py-1 rounded-full border ${isDue ? 'bg-gold-500/15 text-gold-300 border-gold-500/40' : 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'}`}>
+                  {isDue ? '↻ Due for review' : `✓ Practiced ${progress.completions}×`}
+                </span>
+              )}
             </div>
 
             <h1 className="font-display text-4xl sm:text-5xl font-bold text-ivory-100 leading-tight mb-4">
               {opening.name}
             </h1>
 
-            <p className="font-body text-base text-ivory-300 leading-relaxed mb-6">
-              {opening.description}
-            </p>
+            <p className="font-body text-base text-ivory-300 leading-relaxed mb-6">{opening.description}</p>
 
-            {/* Stats */}
             <div className="grid grid-cols-2 gap-4 mb-6">
               {[
                 { label: 'Moves to learn', value: `${moveCount}` },
@@ -72,7 +77,6 @@ export function OpeningPage({ opening, onStartPractice, onBack }: OpeningPagePro
               ))}
             </div>
 
-            {/* Tips */}
             <div className="bg-ink-800 border border-ink-700 rounded-2xl p-5 mb-6">
               <h2 className="font-display text-sm font-semibold text-ivory-100 mb-4 flex items-center gap-2">
                 <span className="text-gold-400">✦</span> Beginner Tips
@@ -89,7 +93,6 @@ export function OpeningPage({ opening, onStartPractice, onBack }: OpeningPagePro
               </ul>
             </div>
 
-            {/* CTA */}
             <button
               onClick={onStartPractice}
               className="w-full sm:w-auto flex items-center justify-center gap-3 bg-gold-500 hover:bg-gold-400 text-ink-950 font-body font-semibold text-base px-8 py-4 rounded-xl transition-all duration-200 hover:shadow-[0_0_32px_rgba(212,165,32,0.4)] focus-visible:outline-none"
@@ -99,12 +102,42 @@ export function OpeningPage({ opening, onStartPractice, onBack }: OpeningPagePro
               </svg>
               Start Practice
             </button>
+
+            {/* Traps */}
+            {opening.traps && opening.traps.length > 0 && (
+              <div className="mt-8">
+                <h2 className="font-display text-base font-semibold text-ivory-100 mb-1 flex items-center gap-2">
+                  <span className="text-gold-400">🎯</span> Traps &amp; Tricks
+                </h2>
+                <p className="font-body text-sm text-ivory-500 mb-4">
+                  Common mistakes opponents make — and how to punish them.
+                </p>
+                <div className="space-y-3">
+                  {opening.traps.map((trap) => (
+                    <div key={trap.id} className="bg-ink-800 border border-ink-700 rounded-xl p-4">
+                      <div className="flex items-start justify-between gap-3 mb-2">
+                        <h3 className="font-display text-sm font-semibold text-ivory-100">{trap.name}</h3>
+                        <span className="flex-shrink-0 font-body text-[10px] uppercase tracking-wide text-ivory-500 border border-ink-600 rounded-full px-2 py-0.5">
+                          Play as {trap.side}
+                        </span>
+                      </div>
+                      <p className="font-body text-xs text-ivory-400 leading-relaxed mb-3">{trap.setup}</p>
+                      <button
+                        onClick={() => onStartTrap(trap)}
+                        className="font-body text-xs font-medium text-gold-300 hover:text-gold-200 border border-gold-500/30 hover:border-gold-500/60 rounded-lg px-3 py-1.5 transition-colors duration-200 focus-visible:outline-none"
+                      >
+                        Practice this trap →
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Right: Demo board */}
-          <div className="animate-fade-in" style={{ animationDelay: '0.1s', opacity: 0 }}>
+          <div className="animate-fade-in lg:sticky lg:top-20" style={{ animationDelay: '0.1s', opacity: 0 }}>
             <div className="bg-ink-800 border border-ink-700 rounded-2xl overflow-hidden">
-              {/* Board */}
               <div className="shadow-[0_8px_40px_rgba(0,0,0,0.5)]">
                 <Chessboard
                   position={demo.fen}
@@ -116,111 +149,76 @@ export function OpeningPage({ opening, onStartPractice, onBack }: OpeningPagePro
                 />
               </div>
 
-              {/* Controls */}
               <div className="px-4 pt-3 pb-2">
-                {/* Move counter */}
                 <div className="flex items-center justify-between mb-3">
                   <span className="font-body text-xs text-ivory-500">
-                    {demo.moveIndex === 0
-                      ? 'Starting position'
-                      : `Move ${demo.moveIndex} of ${demo.totalMoves}`}
+                    {demo.moveIndex === 0 ? 'Starting position' : `Move ${demo.moveIndex} of ${demo.totalMoves}`}
                   </span>
-                  {demo.isComplete && (
-                    <span className="font-body text-xs text-gold-400 font-medium">Opening complete ✓</span>
-                  )}
+                  {demo.isComplete && <span className="font-body text-xs text-gold-400 font-medium">Opening complete ✓</span>}
                 </div>
 
-                {/* Progress bar */}
                 <div className="h-1 bg-ink-700 rounded-full mb-3 overflow-hidden">
-                  <div
-                    className="h-full bg-gold-500 rounded-full transition-all duration-500"
-                    style={{ width: `${(demo.moveIndex / demo.totalMoves) * 100}%` }}
-                  />
+                  <div className="h-full bg-gold-500 rounded-full transition-all duration-500" style={{ width: `${(demo.moveIndex / demo.totalMoves) * 100}%` }} />
                 </div>
 
-                {/* Transport controls */}
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-1">
-                    {/* Reset */}
-                    <ControlBtn onClick={demo.reset} title="Reset" disabled={demo.moveIndex === 0 && !demo.playing}>
+                <div className="flex items-center gap-1">
+                  <ControlBtn onClick={demo.reset} title="Reset" disabled={demo.moveIndex === 0 && !demo.playing}>
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                      <path d="M2 7a5 5 0 1 0 1.5-3.5L2 2v3h3L3.9 3.9A4 4 0 1 1 3 7H2z" fill="currentColor" />
+                    </svg>
+                  </ControlBtn>
+                  <ControlBtn onClick={demo.prev} title="Previous move" disabled={demo.moveIndex === 0}>
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                      <path d="M9 3L5 7l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </ControlBtn>
+                  <button
+                    onClick={demo.playing ? demo.pause : demo.play}
+                    className="w-9 h-9 rounded-lg bg-gold-500 hover:bg-gold-400 text-ink-950 flex items-center justify-center transition-colors duration-150 focus-visible:outline-none"
+                    title={demo.playing ? 'Pause' : 'Play demo'}
+                  >
+                    {demo.playing ? (
                       <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                        <path d="M2 7a5 5 0 1 0 1.5-3.5L2 2v3h3L3.9 3.9A4 4 0 1 1 3 7H2z" fill="currentColor" />
+                        <rect x="3" y="2" width="3" height="10" rx="1" fill="currentColor" />
+                        <rect x="8" y="2" width="3" height="10" rx="1" fill="currentColor" />
                       </svg>
-                    </ControlBtn>
-                    {/* Prev */}
-                    <ControlBtn onClick={demo.prev} title="Previous move" disabled={demo.moveIndex === 0}>
+                    ) : (
                       <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                        <path d="M9 3L5 7l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                        <path d="M4 2.5l7 4.5-7 4.5V2.5z" fill="currentColor" />
                       </svg>
-                    </ControlBtn>
-                    {/* Play/Pause */}
-                    <button
-                      onClick={demo.playing ? demo.pause : demo.play}
-                      className="w-9 h-9 rounded-lg bg-gold-500 hover:bg-gold-400 text-ink-950 flex items-center justify-center transition-colors duration-150 focus-visible:outline-none"
-                      title={demo.playing ? 'Pause' : 'Play demo'}
-                    >
-                      {demo.playing ? (
-                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                          <rect x="3" y="2" width="3" height="10" rx="1" fill="currentColor" />
-                          <rect x="8" y="2" width="3" height="10" rx="1" fill="currentColor" />
-                        </svg>
-                      ) : (
-                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                          <path d="M4 2.5l7 4.5-7 4.5V2.5z" fill="currentColor" />
-                        </svg>
-                      )}
-                    </button>
-                    {/* Next */}
-                    <ControlBtn onClick={demo.next} title="Next move" disabled={demo.isComplete}>
-                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                        <path d="M5 3l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </ControlBtn>
-                  </div>
+                    )}
+                  </button>
+                  <ControlBtn onClick={demo.next} title="Next move" disabled={demo.isComplete}>
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                      <path d="M5 3l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </ControlBtn>
                 </div>
               </div>
 
               {/* Move list */}
-              <div className="px-4 pb-4">
+              <div className="px-4 pb-3">
                 <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2">
                   {movePairs.map((pair, pairIdx) => (
                     <span key={pairIdx} className="font-body text-xs flex items-baseline gap-1">
                       <span className="text-ivory-600">{pairIdx + 1}.</span>
-                      <button
-                        onClick={() => demo.goTo(pair.wIdx + 1)}
-                        className={`px-1 py-0.5 rounded transition-colors duration-100 ${
-                          demo.moveIndex === pair.wIdx + 1
-                            ? 'bg-gold-500 text-ink-950 font-semibold'
-                            : demo.moveIndex > pair.wIdx
-                            ? 'text-ivory-300 hover:text-ivory-100'
-                            : 'text-ivory-600 hover:text-ivory-400'
-                        }`}
-                      >
-                        {pair.w}
-                      </button>
+                      <MoveBtn label={pair.w} active={demo.moveIndex === pair.wIdx + 1} played={demo.moveIndex > pair.wIdx} onClick={() => demo.goTo(pair.wIdx + 1)} />
                       {pair.b !== undefined && (
-                        <button
-                          onClick={() => demo.goTo(pair.bIdx + 1)}
-                          className={`px-1 py-0.5 rounded transition-colors duration-100 ${
-                            demo.moveIndex === pair.bIdx + 1
-                              ? 'bg-gold-500 text-ink-950 font-semibold'
-                              : demo.moveIndex > pair.bIdx
-                              ? 'text-ivory-300 hover:text-ivory-100'
-                              : 'text-ivory-600 hover:text-ivory-400'
-                          }`}
-                        >
-                          {pair.b}
-                        </button>
+                        <MoveBtn label={pair.b} active={demo.moveIndex === pair.bIdx + 1} played={demo.moveIndex > pair.bIdx} onClick={() => demo.goTo(pair.bIdx + 1)} />
                       )}
                     </span>
                   ))}
                 </div>
               </div>
-            </div>
 
-            <p className="mt-2 text-center font-body text-xs text-ivory-600">
-              Watch the opening · Click any move to jump to it
-            </p>
+              {/* Demo per-move explanation */}
+              <div className="border-t border-ink-700 px-4 py-3 min-h-[3.25rem] flex items-center gap-2.5">
+                <span className="flex-shrink-0 text-gold-400 text-sm">💡</span>
+                <p className="font-body text-xs text-ivory-300 leading-relaxed">
+                  {demoNote ?? <span className="text-ivory-600">Press play, step through, or click a move to see why it's played.</span>}
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -228,17 +226,20 @@ export function OpeningPage({ opening, onStartPractice, onBack }: OpeningPagePro
   )
 }
 
-function ControlBtn({
-  onClick,
-  children,
-  title,
-  disabled,
-}: {
-  onClick: () => void
-  children: React.ReactNode
-  title: string
-  disabled?: boolean
-}) {
+function MoveBtn({ label, active, played, onClick }: { label: string; active: boolean; played: boolean; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`px-1 py-0.5 rounded transition-colors duration-100 ${
+        active ? 'bg-gold-500 text-ink-950 font-semibold' : played ? 'text-ivory-300 hover:text-ivory-100' : 'text-ivory-600 hover:text-ivory-400'
+      }`}
+    >
+      {label}
+    </button>
+  )
+}
+
+function ControlBtn({ onClick, children, title, disabled }: { onClick: () => void; children: React.ReactNode; title: string; disabled?: boolean }) {
   return (
     <button
       onClick={onClick}

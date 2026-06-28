@@ -6,9 +6,14 @@ A Duolingo-style chess opening trainer for beginners (0–1200 Elo). Learn the m
 
 - **9 openings** covering both White and Black sides
 - **Interactive practice mode** — drag and drop pieces; the app plays the opponent's moves automatically
+- **Per-move explanations** — every move comes with a one-line "why," in both the demo and practice, so beginners *understand* rather than just memorize
+- **Animated demo** — watch the opening play out, step through it, or click any move to jump to it
+- **Two-stage hint system** — first highlights the piece, then shows the target square with an arrow, so players never get stuck
+- **Move sounds** — distinct audio for moves, captures, checks, success, and errors (toggleable)
+- **Traps & Tricks** — practice famous beginner traps (Fried Liver, Noah's Ark, Elephant) and learn to punish common mistakes
+- **Progress + spaced repetition** — completions are saved to `localStorage`, openings are scheduled for review (SM-2), and the home screen shows a streak, learned count, and "due for review" badges
 - **Instant feedback** — wrong moves shake and prompt a retry; correct moves advance automatically
-- **Progress tracking** — move counter, progress bar, and repetition count per session
-- **Success screen** — shows on completion with options to practice again or choose another opening
+- **Strategic plan on completion** — the success screen tells you what to do once the opening is over
 
 ## Tech Stack
 
@@ -33,20 +38,29 @@ Open [http://localhost:5173](http://localhost:5173).
 src/
 ├── components/
 │   ├── NavBar.tsx        # Persistent top navigation
-│   ├── OpeningCard.tsx   # Home page card for each opening
+│   ├── OpeningCard.tsx   # Home page card (with learned / due badges)
 │   └── ProgressBar.tsx   # Animated progress bar
 ├── data/
-│   └── openings.ts       # All opening definitions (moves, tips, metadata)
+│   └── openings.ts       # All opening definitions: moves, per-move notes, tips, plan, traps
 ├── hooks/
-│   └── usePractice.ts    # Core practice logic: move validation, auto-play, state
+│   ├── usePractice.ts    # Core practice logic: move validation, auto-play, hints, events
+│   ├── useDemo.ts        # Animated opening playback (play/pause/step/jump)
+│   ├── useProgress.ts    # localStorage persistence + SM-2 spaced repetition + streak
+│   └── useSound.ts       # Web Audio sound effects (no asset files)
 ├── pages/
-│   ├── Home.tsx          # Opening selection grid
-│   ├── OpeningPage.tsx   # Opening detail + board preview + Start Practice
-│   └── PracticeMode.tsx  # Interactive board + sidebar + success screen
+│   ├── Home.tsx          # Opening grid + streak / learned / due-for-review
+│   ├── OpeningPage.tsx   # Detail, animated demo, beginner tips, traps
+│   └── PracticeMode.tsx  # Interactive board, per-move explanations, hints, success
 ├── types/
 │   └── index.ts          # Shared TypeScript types
 └── App.tsx               # View router (state-based, no library needed)
+
+scripts/
+└── validate-openings.mjs # Verifies every opening + trap line is legal via chess.js
 ```
+
+Run `npm run validate` to check that every opening and trap line is fully legal and
+that each move's explanation array lines up with its moves.
 
 ## Openings Included
 

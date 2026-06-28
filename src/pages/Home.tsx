@@ -1,13 +1,18 @@
 import { openings } from '../data/openings'
 import { OpeningCard } from '../components/OpeningCard'
 import { NavBar } from '../components/NavBar'
-import type { Opening } from '../types'
+import type { Opening, OpeningProgress } from '../types'
 
 interface HomeProps {
   onSelect: (opening: Opening) => void
+  streak: number
+  learnedCount: number
+  dueCount: number
+  getProgress: (id: string) => OpeningProgress | undefined
+  isDue: (id: string) => boolean
 }
 
-export function Home({ onSelect }: HomeProps) {
+export function Home({ onSelect, streak, learnedCount, dueCount, getProgress, isDue }: HomeProps) {
   const whiteOpenings = openings.filter((o) => o.side === 'white')
   const blackOpenings = openings.filter((o) => o.side === 'black')
 
@@ -32,11 +37,18 @@ export function Home({ onSelect }: HomeProps) {
         </div>
 
         {/* Stats strip */}
-        <div className="mt-10 flex flex-wrap gap-6 animate-fade-in" style={{ animationDelay: '0.15s', opacity: 0 }}>
+        <div className="mt-10 flex flex-wrap gap-x-6 gap-y-3 animate-fade-in" style={{ animationDelay: '0.15s', opacity: 0 }}>
           {[
-            { label: 'Openings', value: `${openings.length}` },
-            { label: 'For beginners', value: '0–1200' },
-            { label: 'No account needed', value: 'Free' },
+            ...(streak > 0 ? [{ label: streak === 1 ? 'day streak' : 'day streak', value: `🔥 ${streak}` }] : []),
+            ...(learnedCount > 0 ? [{ label: `of ${openings.length} learned`, value: `${learnedCount}` }] : []),
+            ...(dueCount > 0 ? [{ label: 'due for review', value: `↻ ${dueCount}` }] : []),
+            ...(learnedCount === 0
+              ? [
+                  { label: 'Openings', value: `${openings.length}` },
+                  { label: 'For beginners', value: '0–1200' },
+                  { label: 'No account needed', value: 'Free' },
+                ]
+              : []),
           ].map((stat) => (
             <div key={stat.label} className="flex items-baseline gap-2">
               <span className="font-display text-2xl font-bold text-gold-400">{stat.value}</span>
@@ -57,6 +69,8 @@ export function Home({ onSelect }: HomeProps) {
           icon="♔"
           openings={whiteOpenings}
           onSelect={onSelect}
+          getProgress={getProgress}
+          isDue={isDue}
           baseDelay={0}
         />
         <Section
@@ -65,6 +79,8 @@ export function Home({ onSelect }: HomeProps) {
           icon="♚"
           openings={blackOpenings}
           onSelect={onSelect}
+          getProgress={getProgress}
+          isDue={isDue}
           baseDelay={whiteOpenings.length * 0.05}
         />
       </main>
@@ -84,6 +100,8 @@ function Section({
   icon,
   openings,
   onSelect,
+  getProgress,
+  isDue,
   baseDelay,
 }: {
   title: string
@@ -91,6 +109,8 @@ function Section({
   icon: string
   openings: Opening[]
   onSelect: (o: Opening) => void
+  getProgress: (id: string) => OpeningProgress | undefined
+  isDue: (id: string) => boolean
   baseDelay: number
 }) {
   return (
@@ -108,6 +128,8 @@ function Section({
             key={opening.id}
             opening={opening}
             onClick={() => onSelect(opening)}
+            learned={!!getProgress(opening.id)}
+            due={isDue(opening.id)}
             style={{ animationDelay: `${(baseDelay + i) * 0.07}s`, opacity: 0 }}
           />
         ))}

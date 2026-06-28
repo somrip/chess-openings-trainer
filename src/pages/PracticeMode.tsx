@@ -1,73 +1,157 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Chessboard } from 'react-chessboard'
-import type { Square } from 'chess.js'
-import type { Opening } from '../types'
+import type { Square, Move } from 'chess.js'
+import type { Opening, TrapLine } from '../types'
 import { usePractice } from '../hooks/usePractice'
+import { useSound } from '../hooks/useSound'
 import { ProgressBar } from '../components/ProgressBar'
 import { NavBar } from '../components/NavBar'
 
 interface PracticeModeProps {
   opening: Opening
+  trap?: TrapLine | null
   onBack: () => void
   onChooseAnother: () => void
+  onCompleted: (openingId: string) => void
 }
 
-export function PracticeMode({ opening, onBack, onChooseAnother }: PracticeModeProps) {
-  const { fen, status, currentMoveIndex, totalMoves, repetitions, isUserTurn, makeMove, restart } =
-    usePractice(opening)
+export function PracticeMode({ opening, trap, onBack, onChooseAnother, onCompleted }: PracticeModeProps) {
+  const moves = trap ? trap.moves : opening.moves
+  const side = trap ? trap.side : opening.side
+  const notes = (trap ? trap.moveNotes : opening.moveNotes) ?? []
+  const title = trap ? `${opening.name}: ${trap.name}` : opening.name
+  const isWhite = side === 'white'
+
+  const [soundOn, setSoundOn] = useState(true)
+  const play = useSound(soundOn)
 
   const [shakeKey, setShakeKey] = useState(0)
   const [lastCorrect, setLastCorrect] = useState(false)
+  const [hintLevel, setHintLevel] = useState(0)
+  const completedRef = useRef(false)
 
-  const totalHalfMoves = totalMoves
-  const isWhite = opening.side === 'white'
+  function soundForMove(move: Move) {
+    if (move.san.includes('+') || move.san.includes('#')) play('check')
+    else if (move.captured) play('capture')
+    else play('move')
+  }
 
+  const { fen, status, currentMoveIndex, totalMoves, repetitions, isUserTurn, lastMove, makeMove, getHint, restart } =
+    usePractice(
+      { moves, side },
+      {
+        onCorrect: (m) => {
+          soundForMove(m)
+          setLastCorrect(true)
+        },
+        onOpponent: (m) => soundForMove(m),
+        onWrong: () => {
+          play('error')
+          setShakeKey((k) => k + 1)
+        },
+        onComplete: () => {
+          play('success')
+          if (!trap && !completedRef.current) {
+            completedRef.current = true
+            onCompleted(opening.id)
+          }
+        },
+      },
+    )
+
+  // Clear the "correct!" flash and any active hint when the position advances.
   useEffect(() => {
-    if (status === 'wrong') {
-      setShakeKey((k) => k + 1)
-    }
-    if (status === 'waiting' && currentMoveIndex > 0 && isUserTurn) {
-      setLastCorrect(true)
-      const t = setTimeout(() => setLastCorrect(false), 600)
+    setHintLevel(0)
+    if (lastCorrect) {
+      const t = setTimeout(() => setLastCorrect(false), 700)
       return () => clearTimeout(t)
     }
-  }, [status, currentMoveIndex, isUserTurn])
+  }, [currentMoveIndex]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function onDrop(sourceSquare: Square, targetSquare: Square): boolean {
     return makeMove(sourceSquare, targetSquare, 'q')
   }
 
-  if (status === 'complete') {
-    return <SuccessScreen opening={opening} repetitions={repetitions} onAgain={restart} onChooseAnother={onChooseAnother} />
+  function handleRestart() {
+    completedRef.current = false
+    restart()
   }
 
-  const userMoveCount = opening.side === 'white'
-    ? Math.ceil(totalMoves / 2)
-    : Math.floor(totalMoves / 2)
+  if (status === 'complete') {
+    return (
+      <SuccessScreen
+        opening={opening}
+        trap={trap}
+        onAgain={handleRestart}
+        onChooseAnother={onChooseAnother}
+      />
+    )
+  }
 
-  const userMoveDone = opening.side === 'white'
-    ? Math.ceil(currentMoveIndex / 2)
-    : Math.floor(currentMoveIndex / 2)
+  const userMoveCount = isWhite ? Math.ceil(totalMoves / 2) : Math.floor(totalMoves / 2)
+  const userMoveDone = isWhite ? Math.ceil(currentMoveIndex / 2) : Math.floor(currentMoveIndex / 2)
+  const progressMoves = Math.min(currentMoveIndex, totalMoves)
 
-  const progressMoves = Math.min(currentMoveIndex, totalHalfMoves)
+  // Explanation for the move that was just played (user or opponent).
+  const lastNote = currentMoveIndex > 0 ? notes[currentMoveIndex - 1] : null
+
+  // Hint highlighting.
+  const hint = hintLevel > 0 ? getHint() : null
+  const squareStyles: Record<string, React.CSSProperties> = {}
+  if (lastMove) {
+    squareStyles[lastMove.from] = { background: 'rgba(212,165,32,0.18)' }
+    squareStyles[lastMove.to] = { background: 'rgba(212,165,32,0.28)' }
+  }
+  if (hint) {
+    squareStyles[hint.from] = {
+      background: 'rgba(74,124,89,0.55)',
+      boxShadow: 'inset 0 0 0 3px rgba(240,192,64,0.9)',
+    }
+    if (hintLevel >= 2) {
+      squareStyles[hint.to] = {
+        background: 'radial-gradient(circle, rgba(240,192,64,0.85) 28%, transparent 30%)',
+      }
+    }
+  }
+  const customArrows: Array<[Square, Square]> = hint && hintLevel >= 2 ? [[hint.from as Square, hint.to as Square]] : []
 
   return (
     <div className="min-h-screen bg-ink-950 text-ivory-100 flex flex-col">
-      <NavBar onHome={onChooseAnother} subtitle={opening.name} />
+      <NavBar onHome={onChooseAnother} subtitle={title} />
 
       <div className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 pt-20 pb-6">
-        <button
-          onClick={onBack}
-          className="mt-6 mb-6 flex items-center gap-2 font-body text-sm text-ivory-500 hover:text-ivory-200 transition-colors duration-200 group focus-visible:outline-none"
-        >
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="group-hover:-translate-x-0.5 transition-transform duration-200">
-            <path d="M10 3L5 8l5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          Back
-        </button>
+        <div className="mt-6 mb-6 flex items-center justify-between">
+          <button
+            onClick={onBack}
+            className="flex items-center gap-2 font-body text-sm text-ivory-500 hover:text-ivory-200 transition-colors duration-200 group focus-visible:outline-none"
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="group-hover:-translate-x-0.5 transition-transform duration-200">
+              <path d="M10 3L5 8l5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            Back
+          </button>
+
+          {/* Sound toggle */}
+          <button
+            onClick={() => setSoundOn((s) => !s)}
+            className="flex items-center gap-2 font-body text-xs text-ivory-500 hover:text-ivory-200 border border-ink-700 hover:border-ink-600 rounded-lg px-3 py-1.5 transition-colors duration-200 focus-visible:outline-none"
+            title={soundOn ? 'Mute sounds' : 'Unmute sounds'}
+          >
+            {soundOn ? '🔊' : '🔇'} Sound {soundOn ? 'on' : 'off'}
+          </button>
+        </div>
+
+        {trap && (
+          <div className="mb-4 rounded-xl border border-gold-500/30 bg-gold-500/5 px-4 py-3">
+            <p className="font-body text-sm text-ivory-300 leading-relaxed">
+              <span className="text-gold-400 font-medium">Trap · {trap.name} — </span>
+              {trap.setup}
+            </p>
+          </div>
+        )}
 
         <div className="grid lg:grid-cols-[1fr_320px] gap-8 items-start">
-          {/* Board */}
+          {/* Board column */}
           <div>
             {/* Status bar */}
             <div
@@ -77,8 +161,6 @@ export function PracticeMode({ opening, onBack, onChooseAnother }: PracticeModeP
                   ? 'border-red-500/50 bg-red-500/10 animate-shake'
                   : lastCorrect
                   ? 'border-emerald-500/50 bg-emerald-500/10'
-                  : status === 'opponent'
-                  ? 'border-ink-600 bg-ink-800'
                   : 'border-ink-700 bg-ink-800'
               }`}
             >
@@ -86,34 +168,25 @@ export function PracticeMode({ opening, onBack, onChooseAnother }: PracticeModeP
                 {status === 'wrong' ? (
                   <>
                     <span className="text-red-400 text-lg">✗</span>
-                    <span className="font-body text-sm font-medium text-red-300">
-                      Not quite — try again
-                    </span>
+                    <span className="font-body text-sm font-medium text-red-300">Not quite — try again</span>
                   </>
                 ) : lastCorrect ? (
                   <>
                     <span className="text-emerald-400 text-lg">✓</span>
-                    <span className="font-body text-sm font-medium text-emerald-300">
-                      Correct!
-                    </span>
+                    <span className="font-body text-sm font-medium text-emerald-300">Correct!</span>
                   </>
                 ) : status === 'opponent' ? (
                   <>
                     <span className="animate-pulse-soft text-ivory-400 text-sm">●</span>
-                    <span className="font-body text-sm text-ivory-400">
-                      {isWhite ? 'Black' : 'White'} is thinking…
-                    </span>
+                    <span className="font-body text-sm text-ivory-400">{isWhite ? 'Black' : 'White'} is thinking…</span>
                   </>
                 ) : (
                   <>
                     <span className="text-gold-400 text-sm">●</span>
-                    <span className="font-body text-sm font-medium text-ivory-200">
-                      Your turn — play the next move
-                    </span>
+                    <span className="font-body text-sm font-medium text-ivory-200">Your turn — play the next move</span>
                   </>
                 )}
               </div>
-
               <span className="font-body text-xs text-ivory-500">
                 Move {userMoveDone} of {userMoveCount}
               </span>
@@ -126,74 +199,81 @@ export function PracticeMode({ opening, onBack, onChooseAnother }: PracticeModeP
                 onPieceDrop={onDrop}
                 boardOrientation={isWhite ? 'white' : 'black'}
                 arePiecesDraggable={isUserTurn && (status === 'waiting' || status === 'wrong')}
+                customSquareStyles={squareStyles}
+                customArrows={customArrows}
+                customArrowColor="#f0c040"
                 customDarkSquareStyle={{ backgroundColor: '#4a7c59' }}
                 customLightSquareStyle={{ backgroundColor: '#f0d9b5' }}
                 customBoardStyle={{ borderRadius: '0' }}
               />
             </div>
+
+            {/* Per-move explanation */}
+            <div className="mt-4 rounded-xl border border-ink-700 bg-ink-800 px-4 py-3 min-h-[3.5rem] flex items-center gap-3">
+              <span className="flex-shrink-0 text-gold-400 text-sm">💡</span>
+              <p className="font-body text-sm text-ivory-300 leading-relaxed">
+                {lastNote ?? (
+                  <span className="text-ivory-500">
+                    Make the first move to begin. Explanations for each move appear here.
+                  </span>
+                )}
+              </p>
+            </div>
           </div>
 
           {/* Sidebar */}
           <div className="space-y-5 animate-fade-in">
-            {/* Opening info */}
+            {/* Progress */}
             <div className="bg-ink-800 border border-ink-700 rounded-2xl p-5">
-              <div className="flex items-start gap-3 mb-4">
-                <div>
-                  <p className="font-body text-xs text-ivory-500 mb-1">Opening</p>
-                  <h2 className="font-display text-lg font-semibold text-ivory-100">{opening.name}</h2>
-                </div>
-              </div>
-
-              <ProgressBar current={progressMoves} total={totalHalfMoves} />
+              <p className="font-body text-xs text-ivory-500 mb-1">{trap ? 'Trap' : 'Opening'}</p>
+              <h2 className="font-display text-lg font-semibold text-ivory-100 mb-4">{title}</h2>
+              <ProgressBar current={progressMoves} total={totalMoves} />
               <p className="font-body text-xs text-ivory-500 mt-2 text-right">
-                {progressMoves} / {totalHalfMoves} moves
+                {progressMoves} / {totalMoves} moves
+              </p>
+            </div>
+
+            {/* Hint */}
+            <div className="bg-ink-800 border border-ink-700 rounded-2xl p-5">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-display text-sm font-semibold text-ivory-300 flex items-center gap-2">
+                  <span className="text-gold-400">🔍</span> Stuck?
+                </h3>
+                {hintLevel > 0 && (
+                  <span className="font-body text-xs text-ivory-500">
+                    {hintLevel === 1 ? 'Which piece' : 'Where to'}
+                  </span>
+                )}
+              </div>
+              <button
+                onClick={() => setHintLevel((l) => Math.min(l + 1, 2))}
+                disabled={!isUserTurn || hintLevel >= 2}
+                className="w-full font-body text-sm text-ink-950 bg-gold-500 hover:bg-gold-400 disabled:opacity-40 disabled:pointer-events-none rounded-xl py-2.5 font-medium transition-all duration-200 focus-visible:outline-none"
+              >
+                {hintLevel === 0 ? 'Show a hint' : hintLevel === 1 ? 'Show me where' : 'Hint shown'}
+              </button>
+              <p className="font-body text-xs text-ivory-600 mt-2 leading-relaxed">
+                First hint highlights the piece, second shows the target square.
               </p>
             </div>
 
             {/* Repetitions */}
             <div className="bg-ink-800 border border-ink-700 rounded-2xl p-5">
-              <p className="font-body text-xs text-ivory-500 mb-1">Completed</p>
+              <p className="font-body text-xs text-ivory-500 mb-1">This session</p>
               <div className="flex items-baseline gap-2">
                 <span className="font-display text-4xl font-bold text-gold-400">{repetitions}</span>
                 <span className="font-body text-sm text-ivory-500">
-                  {repetitions === 1 ? 'repetition' : 'repetitions'}
+                  {repetitions === 1 ? 'completion' : 'completions'}
                 </span>
               </div>
-              <div className="mt-3 flex gap-1.5 flex-wrap">
-                {Array.from({ length: Math.max(repetitions, 5) }).map((_, i) => (
-                  <div
-                    key={i}
-                    className={`w-6 h-6 rounded-md border transition-all duration-300 ${
-                      i < repetitions
-                        ? 'bg-gold-500 border-gold-400'
-                        : 'bg-ink-700 border-ink-600'
-                    }`}
-                  />
-                ))}
-              </div>
-            </div>
-
-            {/* Tips */}
-            <div className="bg-ink-800 border border-ink-700 rounded-2xl p-5">
-              <h3 className="font-display text-sm font-semibold text-ivory-300 mb-3 flex items-center gap-2">
-                <span className="text-gold-400">✦</span> Key Ideas
-              </h3>
-              <ul className="space-y-2">
-                {opening.beginnerTips.slice(0, 3).map((tip, i) => (
-                  <li key={i} className="font-body text-xs text-ivory-400 leading-relaxed flex gap-2">
-                    <span className="text-gold-500 flex-shrink-0">·</span>
-                    {tip}
-                  </li>
-                ))}
-              </ul>
             </div>
 
             {/* Restart */}
             <button
-              onClick={restart}
+              onClick={handleRestart}
               className="w-full font-body text-sm text-ivory-400 hover:text-ivory-100 border border-ink-600 hover:border-ink-500 rounded-xl py-3 transition-all duration-200 focus-visible:outline-none"
             >
-              ↺ Restart Opening
+              ↺ Restart
             </button>
           </div>
         </div>
@@ -204,44 +284,45 @@ export function PracticeMode({ opening, onBack, onChooseAnother }: PracticeModeP
 
 interface SuccessScreenProps {
   opening: Opening
-  repetitions: number
+  trap?: TrapLine | null
   onAgain: () => void
   onChooseAnother: () => void
 }
 
-function SuccessScreen({ opening, repetitions, onAgain, onChooseAnother }: SuccessScreenProps) {
+function SuccessScreen({ opening, trap, onAgain, onChooseAnother }: SuccessScreenProps) {
   return (
     <div className="min-h-screen bg-ink-950 flex flex-col items-center justify-center px-4 text-center animate-fade-in">
-      {/* Trophy */}
-      <div className="text-7xl mb-6 animate-pop">♛</div>
+      <div className="text-7xl mb-6 animate-pop">{trap ? '🎯' : '♛'}</div>
 
       <p className="font-body text-sm font-medium text-gold-400 tracking-widest uppercase mb-3">
-        Opening Complete
+        {trap ? 'Trap Mastered' : 'Opening Complete'}
       </p>
 
-      <h1 className="font-display text-4xl sm:text-5xl font-bold text-ivory-100 mb-4">
-        Well played!
-      </h1>
+      <h1 className="font-display text-4xl sm:text-5xl font-bold text-ivory-100 mb-4">Well played!</h1>
 
-      <p className="font-body text-base text-ivory-400 max-w-sm mb-2">
-        You've completed the <span className="text-ivory-200 font-medium">{opening.name}</span>.
+      <p className="font-body text-base text-ivory-400 max-w-md mb-6">
+        {trap ? (
+          <>You sprang the <span className="text-ivory-200 font-medium">{trap.name}</span>.</>
+        ) : (
+          <>You've completed the <span className="text-ivory-200 font-medium">{opening.name}</span>.</>
+        )}
       </p>
 
-      <div className="my-8 flex items-center gap-8">
-        <div className="text-center">
-          <div className="font-display text-5xl font-bold text-gold-400">{repetitions}</div>
-          <div className="font-body text-sm text-ivory-500 mt-1">
-            {repetitions === 1 ? 'repetition' : 'repetitions'}
-          </div>
-        </div>
-        <div className="w-px h-12 bg-ink-700" />
-        <div className="text-center">
-          <div className="font-display text-5xl font-bold text-ivory-200">
-            {Math.ceil(opening.moves.length / 2)}
-          </div>
-          <div className="font-body text-sm text-ivory-500 mt-1">moves mastered</div>
-        </div>
+      {/* Takeaway: trap payoff or opening plan */}
+      <div className="max-w-md mb-8 rounded-2xl border border-ink-700 bg-ink-800 px-6 py-4">
+        <p className="font-body text-xs text-gold-400 uppercase tracking-wider mb-2">
+          {trap ? 'The lesson' : 'Your plan from here'}
+        </p>
+        <p className="font-body text-sm text-ivory-300 leading-relaxed">
+          {trap ? trap.payoff : opening.plan}
+        </p>
       </div>
+
+      {!trap && (
+        <p className="font-body text-sm text-ivory-500 mb-8">
+          ✓ Saved to your progress · scheduled for spaced review
+        </p>
+      )}
 
       <div className="flex flex-col sm:flex-row gap-3 w-full max-w-xs">
         <button

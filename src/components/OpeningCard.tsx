@@ -4,6 +4,8 @@ interface OpeningCardProps {
   opening: Opening
   onClick: () => void
   style?: React.CSSProperties
+  learned?: boolean
+  due?: boolean
 }
 
 const PIECE_ICON: Record<string, string> = {
@@ -18,7 +20,7 @@ const PIECE_ICON: Record<string, string> = {
   scandinavian: '♜',
 }
 
-export function OpeningCard({ opening, onClick, style }: OpeningCardProps) {
+export function OpeningCard({ opening, onClick, style, learned, due }: OpeningCardProps) {
   const icon = PIECE_ICON[opening.id] ?? '♟'
   const isWhite = opening.side === 'white'
 
@@ -45,6 +47,15 @@ export function OpeningCard({ opening, onClick, style }: OpeningCardProps) {
                 {opening.eco}
               </span>
             )}
+            {due ? (
+              <span className="text-[10px] font-body font-semibold text-gold-300 bg-gold-500/15 px-2 py-0.5 rounded-full border border-gold-500/40">
+                ↻ Review
+              </span>
+            ) : learned ? (
+              <span className="text-[10px] font-body font-semibold text-emerald-300 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                ✓ Learned
+              </span>
+            ) : null}
           </div>
 
           {/* Side badge */}
