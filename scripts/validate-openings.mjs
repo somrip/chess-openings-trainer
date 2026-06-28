@@ -2,6 +2,7 @@
 // and that moveNotes arrays line up with their move lists.
 import { Chess } from '../node_modules/chess.js/dist/esm/chess.js'
 import { openings } from '../src/data/openings.ts'
+import { openingExtras } from '../src/data/openingExtras.ts'
 
 let errors = 0
 
@@ -29,6 +30,11 @@ for (const o of openings) {
   }
   for (const d of o.deviations ?? []) {
     checkLine(`${o.name} → deviation: ${d.name}`, d.moves, d.moveNotes)
+  }
+  const learn = openingExtras[o.id]?.learnNotes
+  if (learn && learn.length !== o.moves.length) {
+    console.error(`  ✗ ${o.name}: ${o.moves.length} moves but ${learn.length} learnNotes`)
+    errors++
   }
 }
 

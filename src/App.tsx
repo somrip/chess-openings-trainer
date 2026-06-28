@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { Opening, AppView, BranchLine } from './types'
 import { Home } from './pages/Home'
 import { OpeningPage } from './pages/OpeningPage'
+import { LearnScreen } from './pages/LearnScreen'
 import { PracticeMode } from './pages/PracticeMode'
 import { FreePlay } from './pages/FreePlay'
 import { useProgress } from './hooks/useProgress'
@@ -17,6 +18,10 @@ export function App() {
   function handleSelectOpening(opening: Opening) {
     setSelectedOpening(opening)
     setView('opening')
+  }
+
+  function handleStartLearn() {
+    setView('learn')
   }
 
   function handleStartPractice(limit?: number) {
@@ -53,9 +58,20 @@ export function App() {
         opening={selectedOpening}
         progress={progress.getProgress(selectedOpening.id)}
         isDue={progress.isDue(selectedOpening.id)}
+        onStartLearn={handleStartLearn}
         onStartPractice={handleStartPractice}
         onStartBranch={handleStartBranch}
         onBack={handleGoHome}
+      />
+    )
+  }
+
+  if (view === 'learn' && selectedOpening) {
+    return (
+      <LearnScreen
+        opening={selectedOpening}
+        onPractice={() => handleStartPractice()}
+        onBack={() => setView('opening')}
       />
     )
   }

@@ -64,9 +64,11 @@ export interface PiecePlacement {
 export interface OpeningExtras {
   structure: StructureLesson
   pieceGuide: PiecePlacement[]
+  /** Richer per-move explanations for the Learn screen, parallel to opening.moves */
+  learnNotes?: string[]
 }
 
-export type AppView = 'home' | 'opening' | 'practice' | 'play'
+export type AppView = 'home' | 'opening' | 'learn' | 'practice' | 'play'
 
 export type PracticeStatus = 'idle' | 'waiting' | 'opponent' | 'wrong' | 'complete'
 

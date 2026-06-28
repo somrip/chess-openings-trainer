@@ -6,8 +6,8 @@ A Duolingo-style chess opening trainer for beginners (0–1200 Elo). Learn the m
 
 - **9 openings** covering both White and Black sides
 - **Interactive practice mode** — drag and drop pieces; the app plays the opponent's moves automatically
-- **Per-move explanations** — every move comes with a one-line "why," in both the demo and practice, so beginners *understand* rather than just memorize
-- **Animated demo** — watch the opening play out, step through it, or click any move to jump to it
+- **Separate Learn and Practice screens** — each opening has a dedicated **Learn** walkthrough (step through every move with a rich explanation of the idea and *why it's good*) and a **Practice** screen that tests recall
+- **Per-move explanations** — every move comes with a "why," both the rich Learn-screen version and a concise one during practice, so beginners *understand* rather than just memorize
 - **Two-stage hint system** — first highlights the piece, then shows the target square with an arrow, so players never get stuck
 - **"Why was that wrong?"** — a wrong move is analyzed with chess.js and, if it drops material, explains the punishment (e.g. *"Black plays Nxa6 and wins your bishop"*) — teaching the #1 beginner skill of not hanging pieces
 - **Click-to-move** — tap a piece then tap its destination (with legal-move dots), alongside drag-and-drop — friendlier on mobile and trackpads
@@ -60,7 +60,8 @@ src/
 │   └── useSound.ts       # Web Audio sound effects (no asset files)
 ├── pages/
 │   ├── Home.tsx          # Opening grid + streak / learned / due-for-review
-│   ├── OpeningPage.tsx   # Detail, demo, tips, structure/plan, piece guide, traps, deviations
+│   ├── OpeningPage.tsx   # Hub: tips, structure/plan, piece guide, traps, deviations, Learn/Practice
+│   ├── LearnScreen.tsx   # Guided move-by-move walkthrough with rich per-move explanations
 │   ├── PracticeMode.tsx  # Interactive board, per-move explanations, hints, success
 │   └── FreePlay.tsx      # "Play on" mode: free play vs the bot from the final position
 ├── types/
