@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Chessboard } from 'react-chessboard'
 import { Chess } from 'chess.js'
 import type { Square, Move } from 'chess.js'
@@ -14,18 +14,29 @@ interface FreePlayProps {
   onHome: () => void
 }
 
+/** One position in the game, plus the move that produced it (for highlighting). */
+interface Ply {
+  fen: string
+  lastMove: { from: string; to: string } | null
+}
+
 export function FreePlay({ startFen, side, openingName, onBack, onHome }: FreePlayProps) {
   const isWhite = side === 'white'
   const userColor = isWhite ? 'w' : 'b'
   const play = useSound(true)
 
-  const [game, setGame] = useState(() => new Chess(startFen))
+  // Full position history so we can take moves back.
+  const [history, setHistory] = useState<Ply[]>(() => [{ fen: startFen, lastMove: null }])
   const [selected, setSelected] = useState<Square | null>(null)
-  const [lastMove, setLastMove] = useState<{ from: string; to: string } | null>(null)
   const botTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const current = history[history.length - 1]
+  const game = useMemo(() => new Chess(current.fen), [current.fen])
+  const lastMove = current.lastMove
 
   const isGameOver = game.isGameOver()
   const isUserTurn = game.turn() === userColor && !isGameOver
+  const canUndo = history.length > 1
 
   function soundFor(move: Move) {
     if (move.san.includes('+') || move.san.includes('#')) play('check')
@@ -37,26 +48,23 @@ export function FreePlay({ startFen, side, openingName, onBack, onHome }: FreePl
   useEffect(() => {
     if (isGameOver || game.turn() === userColor) return
     botTimer.current = setTimeout(() => {
-      const move = chooseBotMove(game.fen())
+      const move = chooseBotMove(current.fen)
       if (!move) return
-      setGame((prev) => {
-        const next = new Chess(prev.fen())
-        const res = next.move({ from: move.from, to: move.to, promotion: move.promotion })
-        if (res) {
-          setLastMove({ from: res.from, to: res.to })
-          soundFor(res)
-        }
-        return next
-      })
+      const next = new Chess(current.fen)
+      const res = next.move({ from: move.from, to: move.to, promotion: move.promotion })
+      if (res) {
+        soundFor(res)
+        setHistory((h) => [...h, { fen: next.fen(), lastMove: { from: res.from, to: res.to } }])
+      }
     }, 500)
     return () => {
       if (botTimer.current) clearTimeout(botTimer.current)
     }
-  }, [game, userColor, isGameOver]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [current.fen, userColor, isGameOver]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function userMove(from: Square, to: Square): boolean {
     if (!isUserTurn) return false
-    const next = new Chess(game.fen())
+    const next = new Chess(current.fen)
     let res: Move | null
     try {
       res = next.move({ from, to, promotion: 'q' })
@@ -64,9 +72,8 @@ export function FreePlay({ startFen, side, openingName, onBack, onHome }: FreePl
       return false
     }
     if (!res) return false
-    setGame(next)
-    setLastMove({ from: res.from, to: res.to })
     soundFor(res)
+    setHistory((h) => [...h, { fen: next.fen(), lastMove: { from: res!.from, to: res!.to } }])
     return true
   }
 
@@ -76,7 +83,7 @@ export function FreePlay({ startFen, side, openingName, onBack, onHome }: FreePl
   }
 
   function ownPieceAt(sq: Square): boolean {
-    const p = new Chess(game.fen()).get(sq)
+    const p = new Chess(current.fen).get(sq)
     return !!p && p.color === userColor
   }
 
@@ -90,11 +97,24 @@ export function FreePlay({ startFen, side, openingName, onBack, onHome }: FreePl
     if (ownPieceAt(sq)) setSelected(sq)
   }
 
+  // Take back to the previous position where it's the user's turn (undoes the
+  // bot's reply and the user's move together), so the bot doesn't instantly
+  // re-move. Works even after the game has ended.
+  function undo() {
+    if (botTimer.current) clearTimeout(botTimer.current)
+    setSelected(null)
+    setHistory((h) => {
+      if (h.length <= 1) return h
+      let idx = h.length - 2
+      while (idx > 0 && new Chess(h[idx].fen).turn() !== userColor) idx--
+      return h.slice(0, idx + 1)
+    })
+  }
+
   function restart() {
     if (botTimer.current) clearTimeout(botTimer.current)
-    setGame(new Chess(startFen))
     setSelected(null)
-    setLastMove(null)
+    setHistory([{ fen: startFen, lastMove: null }])
   }
 
   // Square highlights.
@@ -200,6 +220,13 @@ export function FreePlay({ startFen, side, openingName, onBack, onHome }: FreePl
               </div>
             )}
 
+            <button
+              onClick={undo}
+              disabled={!canUndo}
+              className="w-full font-body text-sm text-ivory-200 border border-ink-600 hover:border-ink-500 hover:text-ivory-100 disabled:opacity-40 disabled:pointer-events-none rounded-xl py-3 transition-all duration-200 focus-visible:outline-none"
+            >
+              ↶ Take back move
+            </button>
             <button
               onClick={restart}
               className="w-full font-body text-sm text-ivory-400 hover:text-ivory-100 border border-ink-600 hover:border-ink-500 rounded-xl py-3 transition-all duration-200 focus-visible:outline-none"
