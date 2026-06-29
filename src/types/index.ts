@@ -9,6 +9,14 @@ export interface BranchLine {
   kind: 'trap' | 'deviation'
   /** Which side the user plays in this line (may differ from the opening) */
   side: 'white' | 'black'
+  /**
+   * For variations that fork off the opening's main line: the index into the
+   * opening's `moves` array at which this line first diverges. `moves[0..n-1]`
+   * must equal the opening's main line, and `moves[n]` is the opponent's
+   * alternative. Used to surface the variation contextually in the Learn screen
+   * exactly where the choice happens. Omit for standalone lines (e.g. traps).
+   */
+  branchFromMove?: number
   /** Shown to set the scene, e.g. "Black greedily grabs the pawn…" */
   setup: string
   /** Full move list (both sides interleaved), starting from move 1 */

@@ -201,13 +201,14 @@ export function OpeningPage({ opening, progress, isDue, onStartLearn, onStartPra
               onStart={onStartBranch}
             />
 
-            {/* Deviations */}
+            {/* Common variations / off-book lines */}
             <BranchSection
               icon="🧭"
-              title="If They Go Off-Book"
-              blurb="What to do when your opponent leaves the main line."
+              title="Common Variations"
+              blurb="How to handle your opponent's other tries when they leave the main line."
               cta="Practice this line"
               branches={opening.deviations}
+              mainMoves={opening.moves}
               onStart={onStartBranch}
             />
           </div>
@@ -250,6 +251,7 @@ function BranchSection({
   blurb,
   cta,
   branches,
+  mainMoves,
   onStart,
 }: {
   icon: string
@@ -257,6 +259,7 @@ function BranchSection({
   blurb: string
   cta: string
   branches?: BranchLine[]
+  mainMoves?: string[]
   onStart: (b: BranchLine) => void
 }) {
   if (!branches || branches.length === 0) return null
@@ -275,6 +278,13 @@ function BranchSection({
                 Play as {b.side}
               </span>
             </div>
+            {b.branchFromMove != null && mainMoves && (
+              <p className="font-body text-[11px] text-gold-300/90 mb-2">
+                ⤳ Move {Math.ceil((b.branchFromMove + 1) / 2)}: opponent plays{' '}
+                <span className="font-semibold">{b.moves[b.branchFromMove]}</span> instead of{' '}
+                <span className="font-semibold">{mainMoves[b.branchFromMove]}</span>
+              </p>
+            )}
             <p className="font-body text-xs text-ivory-400 leading-relaxed mb-3">{b.setup}</p>
             <button
               onClick={() => onStart(b)}

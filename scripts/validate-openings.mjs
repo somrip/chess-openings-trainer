@@ -30,6 +30,32 @@ for (const o of openings) {
   }
   for (const d of o.deviations ?? []) {
     checkLine(`${o.name} → deviation: ${d.name}`, d.moves, d.moveNotes)
+    if (d.branchFromMove != null) {
+      const n = d.branchFromMove
+      const label = `${o.name} → variation: ${d.name}`
+      if (n <= 0 || n >= o.moves.length || n >= d.moves.length) {
+        console.error(`  ✗ ${label}: branchFromMove ${n} out of range`)
+        errors++
+      } else {
+        for (let i = 0; i < n; i++) {
+          if (d.moves[i] !== o.moves[i]) {
+            console.error(`  ✗ ${label}: move #${i + 1} "${d.moves[i]}" must match the main line "${o.moves[i]}" before branchFromMove ${n}`)
+            errors++
+          }
+        }
+        if (d.moves[n] === o.moves[n]) {
+          console.error(`  ✗ ${label}: branchFromMove ${n} should diverge from the main line, but both play "${d.moves[n]}"`)
+          errors++
+        }
+        // The fork must be the opponent's move (the user follows the main line up to here).
+        const userIsWhite = o.side === 'white'
+        const forkIsWhite = n % 2 === 0
+        if (forkIsWhite === userIsWhite) {
+          console.error(`  ✗ ${label}: branchFromMove ${n} is one of the user's own moves; it must be an opponent move`)
+          errors++
+        }
+      }
+    }
   }
   const learn = openingExtras[o.id]?.learnNotes
   if (learn && learn.length !== o.moves.length) {

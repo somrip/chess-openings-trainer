@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { Chessboard } from 'react-chessboard'
 import { Chess } from 'chess.js'
-import type { Opening } from '../types'
+import type { Opening, BranchLine } from '../types'
 import { NavBar } from '../components/NavBar'
 import { useDemo } from '../hooks/useDemo'
 import { getExtras } from '../data/openingExtras'
@@ -9,10 +9,11 @@ import { getExtras } from '../data/openingExtras'
 interface LearnScreenProps {
   opening: Opening
   onPractice: () => void
+  onStartBranch: (branch: BranchLine) => void
   onBack: () => void
 }
 
-export function LearnScreen({ opening, onPractice, onBack }: LearnScreenProps) {
+export function LearnScreen({ opening, onPractice, onStartBranch, onBack }: LearnScreenProps) {
   const isWhite = opening.side === 'white'
   const demo = useDemo(opening)
   const extras = getExtras(opening.id)
@@ -31,6 +32,13 @@ export function LearnScreen({ opening, onPractice, onBack }: LearnScreenProps) {
 
   const moveNumber = Math.ceil(demo.moveIndex / 2)
   const explanation = demo.moveIndex > 0 ? notes[demo.moveIndex - 1] : null
+
+  // Variations that fork right here — i.e. the opponent could deviate on the
+  // move that is about to be played. Surface them at the decision point.
+  const whatIfs = useMemo(
+    () => (opening.deviations ?? []).filter((d) => d.branchFromMove === demo.moveIndex),
+    [opening.deviations, demo.moveIndex],
+  )
 
   const squareStyles: Record<string, React.CSSProperties> = {}
   if (lastMove) {
@@ -135,6 +143,36 @@ export function LearnScreen({ opening, onPractice, onBack }: LearnScreenProps) {
                 </div>
               )}
             </div>
+
+            {/* Contextual variations: what if the opponent deviates here? */}
+            {whatIfs.length > 0 && (
+              <div className="bg-ink-800 border border-gold-500/30 rounded-2xl p-5">
+                <h3 className="font-display text-sm font-semibold text-ivory-100 mb-1 flex items-center gap-2">
+                  <span className="text-gold-400">⤳</span> What if they play something else?
+                </h3>
+                <p className="font-body text-xs text-ivory-500 mb-4">
+                  Here the main line continues{' '}
+                  <span className="text-ivory-300 font-medium">{opening.moves[demo.moveIndex]}</span>. But your opponent
+                  might try:
+                </p>
+                <div className="space-y-3">
+                  {whatIfs.map((d) => (
+                    <div key={d.id} className="rounded-xl border border-ink-700 bg-ink-900/60 p-3">
+                      <p className="font-body text-sm text-ivory-200 leading-relaxed mb-1">
+                        <span className="font-semibold text-gold-300">{d.moves[d.branchFromMove!]}</span> — {d.name}
+                      </p>
+                      <p className="font-body text-xs text-ivory-400 leading-relaxed mb-2.5">{d.setup}</p>
+                      <button
+                        onClick={() => onStartBranch(d)}
+                        className="font-body text-xs font-medium text-gold-300 hover:text-gold-200 border border-gold-500/30 hover:border-gold-500/60 rounded-lg px-3 py-1.5 transition-colors duration-200 focus-visible:outline-none"
+                      >
+                        Practice this line →
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Move list */}
             <div className="bg-ink-800 border border-ink-700 rounded-2xl p-5">

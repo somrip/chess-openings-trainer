@@ -71,6 +71,7 @@ export function App() {
       <LearnScreen
         opening={selectedOpening}
         onPractice={() => handleStartPractice()}
+        onStartBranch={handleStartBranch}
         onBack={() => setView('opening')}
       />
     )
