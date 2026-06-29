@@ -233,7 +233,7 @@ export function PracticeMode({ opening, branch, maxMoves, review, onBack, onChoo
 
         <div className="grid lg:grid-cols-[1fr_320px] gap-4 sm:gap-8 items-start">
           {/* Board column */}
-          <div className="mx-auto w-full max-w-[330px] lg:max-w-none">
+          <div>
             {/* Status bar */}
             <div
               key={shakeKey}

@@ -96,7 +96,7 @@ export function LearnScreen({ opening, onPractice, onStartBranch, onBack }: Lear
 
         <div className="grid lg:grid-cols-[1fr_400px] gap-4 sm:gap-8 items-start">
           {/* Board + transport */}
-          <div className="mx-auto w-full max-w-[330px] lg:max-w-none">
+          <div>
             <div className="rounded-2xl overflow-hidden border border-ink-700 shadow-[0_24px_80px_rgba(0,0,0,0.6)]">
               <Chessboard
                 position={demo.fen}
