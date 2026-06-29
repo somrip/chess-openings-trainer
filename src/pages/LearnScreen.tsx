@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Chessboard } from 'react-chessboard'
 import { Chess } from 'chess.js'
 import type { Opening, BranchLine } from '../types'
@@ -14,30 +14,52 @@ interface LearnScreenProps {
 }
 
 export function LearnScreen({ opening, onPractice, onStartBranch, onBack }: LearnScreenProps) {
-  const isWhite = opening.side === 'white'
-  const demo = useDemo(opening)
   const extras = getExtras(opening.id)
-  const notes = extras?.learnNotes ?? opening.moveNotes
+
+  // The Learn walkthrough can follow the main line, or branch into a variation
+  // at its fork point and continue from there.
+  const [branch, setBranch] = useState<BranchLine | null>(null)
+  // Where to resume the main line when leaving a variation (its fork move).
+  const [mainResume, setMainResume] = useState(0)
+
+  // Reset branching if the opening itself changes.
+  useEffect(() => {
+    setBranch(null)
+    setMainResume(0)
+  }, [opening.id])
+
+  const line = branch ?? opening
+  const isWhite = line.side === 'white'
+  const lineId = branch ? `${opening.id}::${branch.id}` : opening.id
+  const initialIndex = branch ? branch.branchFromMove! : mainResume
+  const demo = useDemo({ id: lineId, moves: line.moves }, initialIndex)
+
+  const notes = branch ? branch.moveNotes ?? [] : extras?.learnNotes ?? opening.moveNotes
+
+  function enterBranch(d: BranchLine) {
+    setMainResume(d.branchFromMove!)
+    setBranch(d)
+  }
 
   // The move just played and its board squares (for highlighting + the SAN badge).
   const { lastMove, san, byUser } = useMemo(() => {
     if (demo.moveIndex === 0) return { lastMove: null, san: null, byUser: false }
     const g = new Chess()
     let res = null
-    for (let i = 0; i < demo.moveIndex; i++) res = g.move(opening.moves[i])
+    for (let i = 0; i < demo.moveIndex; i++) res = g.move(line.moves[i])
     const idx = demo.moveIndex - 1
     const userPlayed = isWhite ? idx % 2 === 0 : idx % 2 === 1
     return res ? { lastMove: { from: res.from, to: res.to }, san: res.san, byUser: userPlayed } : { lastMove: null, san: null, byUser: false }
-  }, [demo.moveIndex, opening.moves, isWhite])
+  }, [demo.moveIndex, line.moves, isWhite])
 
   const moveNumber = Math.ceil(demo.moveIndex / 2)
   const explanation = demo.moveIndex > 0 ? notes[demo.moveIndex - 1] : null
 
   // Variations that fork right here — i.e. the opponent could deviate on the
-  // move that is about to be played. Surface them at the decision point.
+  // move that is about to be played. Only offered while on the main line.
   const whatIfs = useMemo(
-    () => (opening.deviations ?? []).filter((d) => d.branchFromMove === demo.moveIndex),
-    [opening.deviations, demo.moveIndex],
+    () => (branch ? [] : (opening.deviations ?? []).filter((d) => d.branchFromMove === demo.moveIndex)),
+    [branch, opening.deviations, demo.moveIndex],
   )
 
   const squareStyles: Record<string, React.CSSProperties> = {}
@@ -47,13 +69,13 @@ export function LearnScreen({ opening, onPractice, onStartBranch, onBack }: Lear
   }
 
   const movePairs: Array<{ w: string; b?: string; wIdx: number; bIdx: number }> = []
-  for (let i = 0; i < opening.moves.length; i += 2) {
-    movePairs.push({ w: opening.moves[i], b: opening.moves[i + 1], wIdx: i, bIdx: i + 1 })
+  for (let i = 0; i < line.moves.length; i += 2) {
+    movePairs.push({ w: line.moves[i], b: line.moves[i + 1], wIdx: i, bIdx: i + 1 })
   }
 
   return (
     <div className="min-h-screen bg-ink-950 text-ivory-100 flex flex-col">
-      <NavBar onHome={onBack} subtitle={`${opening.name} · Learn`} />
+      <NavBar onHome={onBack} subtitle={`${opening.name} · Learn${branch ? ` · ${branch.name}` : ''}`} />
 
       <div className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 pt-20 pb-8">
         <button
@@ -102,10 +124,10 @@ export function LearnScreen({ opening, onPractice, onStartBranch, onBack }: Lear
                 </button>
                 {demo.isComplete ? (
                   <button
-                    onClick={onPractice}
+                    onClick={() => (branch ? onStartBranch(branch) : onPractice())}
                     className="flex items-center gap-1.5 font-body text-sm font-semibold text-ink-950 bg-gold-500 hover:bg-gold-400 rounded-xl px-4 py-2.5 transition-colors duration-150 focus-visible:outline-none"
                   >
-                    Practice now ›
+                    {branch ? 'Practice this line ›' : 'Practice now ›'}
                   </button>
                 ) : (
                   <button
@@ -121,6 +143,22 @@ export function LearnScreen({ opening, onPractice, onStartBranch, onBack }: Lear
 
           {/* Explanation panel */}
           <div className="space-y-5">
+            {/* Variation banner — shown while learning a branch */}
+            {branch && (
+              <div className="bg-gold-500/10 border border-gold-500/40 rounded-2xl p-4 flex items-start justify-between gap-3">
+                <div>
+                  <p className="font-body text-[11px] uppercase tracking-wide text-gold-300/80 mb-0.5">Learning variation</p>
+                  <p className="font-display text-sm font-semibold text-ivory-100">{branch.name}</p>
+                </div>
+                <button
+                  onClick={() => setBranch(null)}
+                  className="flex-shrink-0 font-body text-xs font-medium text-ivory-300 hover:text-ivory-100 border border-ink-600 hover:border-ink-500 rounded-lg px-3 py-1.5 transition-colors duration-200 focus-visible:outline-none"
+                >
+                  ‹ Back to main line
+                </button>
+              </div>
+            )}
+
             <div className="bg-ink-800 border border-ink-700 rounded-2xl p-6 min-h-[220px]">
               {explanation ? (
                 <>
@@ -162,12 +200,20 @@ export function LearnScreen({ opening, onPractice, onStartBranch, onBack }: Lear
                         <span className="font-semibold text-gold-300">{d.moves[d.branchFromMove!]}</span> — {d.name}
                       </p>
                       <p className="font-body text-xs text-ivory-400 leading-relaxed mb-2.5">{d.setup}</p>
-                      <button
-                        onClick={() => onStartBranch(d)}
-                        className="font-body text-xs font-medium text-gold-300 hover:text-gold-200 border border-gold-500/30 hover:border-gold-500/60 rounded-lg px-3 py-1.5 transition-colors duration-200 focus-visible:outline-none"
-                      >
-                        Practice this line →
-                      </button>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          onClick={() => enterBranch(d)}
+                          className="font-body text-xs font-semibold text-ink-950 bg-gold-500 hover:bg-gold-400 rounded-lg px-3 py-1.5 transition-colors duration-200 focus-visible:outline-none"
+                        >
+                          📖 Learn this line
+                        </button>
+                        <button
+                          onClick={() => onStartBranch(d)}
+                          className="font-body text-xs font-medium text-gold-300 hover:text-gold-200 border border-gold-500/30 hover:border-gold-500/60 rounded-lg px-3 py-1.5 transition-colors duration-200 focus-visible:outline-none"
+                        >
+                          Practice this line →
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -191,10 +237,10 @@ export function LearnScreen({ opening, onPractice, onStartBranch, onBack }: Lear
 
             {/* Always-available practice CTA */}
             <button
-              onClick={onPractice}
+              onClick={() => (branch ? onStartBranch(branch) : onPractice())}
               className="w-full flex items-center justify-center gap-2 font-body text-sm font-semibold text-ivory-200 bg-ink-800 hover:bg-ink-700 border border-ink-600 hover:border-gold-400/50 rounded-xl py-3.5 transition-all duration-200 focus-visible:outline-none"
             >
-              Ready? Practice this opening →
+              {branch ? `Ready? Practice this variation →` : `Ready? Practice this opening →`}
             </button>
           </div>
         </div>
