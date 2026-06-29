@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import type { Opening, AppView, BranchLine } from './types'
+import { openings, getOpeningById } from './data/openings'
 import { Home } from './pages/Home'
+import { ReviewComplete } from './pages/ReviewComplete'
 import { OpeningPage } from './pages/OpeningPage'
 import { LearnScreen } from './pages/LearnScreen'
 import { PracticeMode } from './pages/PracticeMode'
@@ -13,6 +15,10 @@ export function App() {
   const [selectedBranch, setSelectedBranch] = useState<BranchLine | null>(null)
   const [maxMoves, setMaxMoves] = useState<number | undefined>(undefined)
   const [playState, setPlayState] = useState<{ fen: string; side: 'white' | 'black' } | null>(null)
+  // Active spaced-repetition review session: a queue of due opening ids.
+  const [review, setReview] = useState<{ queue: string[]; index: number } | null>(null)
+  // Set when a review session finishes, to show the completion screen.
+  const [reviewDone, setReviewDone] = useState<number | null>(null)
   const progress = useProgress()
 
   function handleSelectOpening(opening: Opening) {
@@ -34,6 +40,37 @@ export function App() {
     setSelectedBranch(branch)
     setMaxMoves(undefined)
     setView('practice')
+  }
+
+  function handleStartReview() {
+    const queue = openings.filter((o) => progress.isDue(o.id)).map((o) => o.id)
+    if (queue.length === 0) return
+    setReview({ queue, index: 0 })
+    setReviewDone(null)
+    setSelectedOpening(getOpeningById(queue[0]) ?? null)
+    setSelectedBranch(null)
+    setMaxMoves(undefined)
+    setView('practice')
+  }
+
+  function handleReviewNext() {
+    if (!review) return
+    const next = review.index + 1
+    if (next < review.queue.length) {
+      setReview({ ...review, index: next })
+      setSelectedOpening(getOpeningById(review.queue[next]) ?? null)
+    } else {
+      setReviewDone(review.queue.length)
+      setReview(null)
+      setSelectedOpening(null)
+      setView('home')
+    }
+  }
+
+  function handleExitReview() {
+    setReview(null)
+    setSelectedOpening(null)
+    setView('home')
   }
 
   function handleGoHome() {
@@ -80,11 +117,13 @@ export function App() {
   if (view === 'practice' && selectedOpening) {
     return (
       <PracticeMode
+        key={review ? `review-${review.index}` : `${selectedOpening.id}-${selectedBranch?.id ?? 'main'}`}
         opening={selectedOpening}
         branch={selectedBranch}
         maxMoves={maxMoves}
-        onBack={handleBackToOpening}
-        onChooseAnother={handleGoHome}
+        review={review ? { index: review.index, total: review.queue.length, onNext: handleReviewNext } : undefined}
+        onBack={review ? handleExitReview : handleBackToOpening}
+        onChooseAnother={review ? handleExitReview : handleGoHome}
         onCompleted={progress.recordCompletion}
         onPlayOn={handlePlayOn}
       />
@@ -103,9 +142,14 @@ export function App() {
     )
   }
 
+  if (reviewDone !== null) {
+    return <ReviewComplete count={reviewDone} streak={progress.streak} onDone={() => setReviewDone(null)} />
+  }
+
   return (
     <Home
       onSelect={handleSelectOpening}
+      onStartReview={handleStartReview}
       streak={progress.streak}
       learnedCount={progress.learnedCount}
       dueCount={progress.dueCount}

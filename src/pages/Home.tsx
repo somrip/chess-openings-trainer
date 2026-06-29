@@ -5,6 +5,7 @@ import type { Opening, OpeningProgress } from '../types'
 
 interface HomeProps {
   onSelect: (opening: Opening) => void
+  onStartReview: () => void
   streak: number
   learnedCount: number
   dueCount: number
@@ -12,7 +13,7 @@ interface HomeProps {
   isDue: (id: string) => boolean
 }
 
-export function Home({ onSelect, streak, learnedCount, dueCount, getProgress, isDue }: HomeProps) {
+export function Home({ onSelect, onStartReview, streak, learnedCount, dueCount, getProgress, isDue }: HomeProps) {
   const whiteOpenings = openings.filter((o) => o.side === 'white')
   const blackOpenings = openings.filter((o) => o.side === 'black')
 
@@ -56,6 +57,29 @@ export function Home({ onSelect, streak, learnedCount, dueCount, getProgress, is
             </div>
           ))}
         </div>
+
+        {/* Review CTA — appears when openings are due for spaced review */}
+        {dueCount > 0 && (
+          <div className="mt-8 animate-fade-in" style={{ animationDelay: '0.2s', opacity: 0 }}>
+            <button
+              onClick={onStartReview}
+              className="group flex items-center gap-4 rounded-2xl border border-gold-500/40 bg-gold-500/10 hover:bg-gold-500/15 px-5 py-4 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400"
+            >
+              <span className="flex-shrink-0 flex items-center justify-center w-11 h-11 rounded-xl bg-gold-500 text-ink-950 text-xl font-bold">
+                ↻
+              </span>
+              <span className="text-left">
+                <span className="block font-display text-base font-semibold text-ivory-100 group-hover:text-gold-300 transition-colors">
+                  Start review · {dueCount} due
+                </span>
+                <span className="block font-body text-sm text-ivory-400">
+                  Refresh {dueCount === 1 ? 'an opening' : `${dueCount} openings`} you've already learned
+                </span>
+              </span>
+              <span className="ml-2 text-gold-300 group-hover:translate-x-0.5 transition-transform">→</span>
+            </button>
+          </div>
+        )}
       </section>
 
       {/* Divider */}
