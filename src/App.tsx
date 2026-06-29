@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import type { Opening, AppView, BranchLine } from './types'
 import { openings, getOpeningById } from './data/openings'
+import { NavContext } from './components/NavContext'
+import type { NavContextValue } from './components/NavContext'
 import { Home } from './pages/Home'
 import { ReviewComplete } from './pages/ReviewComplete'
 import { OpeningPage } from './pages/OpeningPage'
@@ -22,6 +24,8 @@ export function App() {
   const progress = useProgress()
 
   function handleSelectOpening(opening: Opening) {
+    setReview(null)
+    setSelectedBranch(null)
     setSelectedOpening(opening)
     setView('opening')
   }
@@ -77,6 +81,7 @@ export function App() {
     setView('home')
     setSelectedOpening(null)
     setSelectedBranch(null)
+    setReview(null)
   }
 
   function handleBackToOpening() {
@@ -89,72 +94,87 @@ export function App() {
     setView('play')
   }
 
-  if (view === 'opening' && selectedOpening) {
+  const navValue: NavContextValue = {
+    onSelectOpening: handleSelectOpening,
+    onHome: handleGoHome,
+    onStartReview: handleStartReview,
+    currentOpeningId: selectedOpening?.id,
+    dueCount: progress.dueCount,
+    streak: progress.streak,
+    isDue: progress.isDue,
+    isLearned: (id) => !!progress.getProgress(id),
+  }
+
+  function renderView() {
+    if (view === 'opening' && selectedOpening) {
+      return (
+        <OpeningPage
+          opening={selectedOpening}
+          progress={progress.getProgress(selectedOpening.id)}
+          isDue={progress.isDue(selectedOpening.id)}
+          onStartLearn={handleStartLearn}
+          onStartPractice={handleStartPractice}
+          onStartBranch={handleStartBranch}
+          onBack={handleGoHome}
+        />
+      )
+    }
+
+    if (view === 'learn' && selectedOpening) {
+      return (
+        <LearnScreen
+          opening={selectedOpening}
+          onPractice={() => handleStartPractice()}
+          onStartBranch={handleStartBranch}
+          onBack={() => setView('opening')}
+        />
+      )
+    }
+
+    if (view === 'practice' && selectedOpening) {
+      return (
+        <PracticeMode
+          key={review ? `review-${review.index}` : `${selectedOpening.id}-${selectedBranch?.id ?? 'main'}`}
+          opening={selectedOpening}
+          branch={selectedBranch}
+          maxMoves={maxMoves}
+          review={review ? { index: review.index, total: review.queue.length, onNext: handleReviewNext } : undefined}
+          onBack={review ? handleExitReview : handleBackToOpening}
+          onChooseAnother={review ? handleExitReview : handleGoHome}
+          onCompleted={progress.recordCompletion}
+          onPlayOn={handlePlayOn}
+        />
+      )
+    }
+
+    if (view === 'play' && selectedOpening && playState) {
+      return (
+        <FreePlay
+          startFen={playState.fen}
+          side={playState.side}
+          openingName={selectedOpening.name}
+          onBack={() => setView('practice')}
+          onHome={handleGoHome}
+        />
+      )
+    }
+
+    if (reviewDone !== null) {
+      return <ReviewComplete count={reviewDone} streak={progress.streak} onDone={() => setReviewDone(null)} />
+    }
+
     return (
-      <OpeningPage
-        opening={selectedOpening}
-        progress={progress.getProgress(selectedOpening.id)}
-        isDue={progress.isDue(selectedOpening.id)}
-        onStartLearn={handleStartLearn}
-        onStartPractice={handleStartPractice}
-        onStartBranch={handleStartBranch}
-        onBack={handleGoHome}
+      <Home
+        onSelect={handleSelectOpening}
+        onStartReview={handleStartReview}
+        streak={progress.streak}
+        learnedCount={progress.learnedCount}
+        dueCount={progress.dueCount}
+        getProgress={progress.getProgress}
+        isDue={progress.isDue}
       />
     )
   }
 
-  if (view === 'learn' && selectedOpening) {
-    return (
-      <LearnScreen
-        opening={selectedOpening}
-        onPractice={() => handleStartPractice()}
-        onStartBranch={handleStartBranch}
-        onBack={() => setView('opening')}
-      />
-    )
-  }
-
-  if (view === 'practice' && selectedOpening) {
-    return (
-      <PracticeMode
-        key={review ? `review-${review.index}` : `${selectedOpening.id}-${selectedBranch?.id ?? 'main'}`}
-        opening={selectedOpening}
-        branch={selectedBranch}
-        maxMoves={maxMoves}
-        review={review ? { index: review.index, total: review.queue.length, onNext: handleReviewNext } : undefined}
-        onBack={review ? handleExitReview : handleBackToOpening}
-        onChooseAnother={review ? handleExitReview : handleGoHome}
-        onCompleted={progress.recordCompletion}
-        onPlayOn={handlePlayOn}
-      />
-    )
-  }
-
-  if (view === 'play' && selectedOpening && playState) {
-    return (
-      <FreePlay
-        startFen={playState.fen}
-        side={playState.side}
-        openingName={selectedOpening.name}
-        onBack={() => setView('practice')}
-        onHome={handleGoHome}
-      />
-    )
-  }
-
-  if (reviewDone !== null) {
-    return <ReviewComplete count={reviewDone} streak={progress.streak} onDone={() => setReviewDone(null)} />
-  }
-
-  return (
-    <Home
-      onSelect={handleSelectOpening}
-      onStartReview={handleStartReview}
-      streak={progress.streak}
-      learnedCount={progress.learnedCount}
-      dueCount={progress.dueCount}
-      getProgress={progress.getProgress}
-      isDue={progress.isDue}
-    />
-  )
+  return <NavContext.Provider value={navValue}>{renderView()}</NavContext.Provider>
 }
