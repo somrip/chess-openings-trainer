@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Chessboard } from 'react-chessboard'
 import { Chess } from 'chess.js'
 import type { Opening, BranchLine } from '../types'
@@ -36,9 +36,15 @@ export function LearnScreen({ opening, onPractice, onStartBranch, onBack }: Lear
 
   const notes = branch ? branch.moveNotes ?? [] : extras?.learnNotes ?? opening.moveNotes
 
+  const whatIfRef = useRef<HTMLDivElement>(null)
+
   function enterBranch(d: BranchLine) {
     setMainResume(d.branchFromMove!)
     setBranch(d)
+  }
+
+  function scrollToWhatIfs() {
+    whatIfRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }
 
   // The move just played and its board squares (for highlighting + the SAN badge).
@@ -139,10 +145,24 @@ export function LearnScreen({ opening, onPractice, onStartBranch, onBack }: Lear
                 )}
               </div>
             </div>
+
+            {/* Mobile-only cue: variations exist at this move (panel is below the fold). */}
+            {whatIfs.length > 0 && (
+              <button
+                onClick={scrollToWhatIfs}
+                className="lg:hidden mt-3 w-full flex items-center justify-between gap-2 rounded-xl border border-gold-500/40 bg-gold-500/10 px-4 py-3 text-left transition-colors duration-200 hover:bg-gold-500/15 focus-visible:outline-none"
+              >
+                <span className="font-body text-sm text-ivory-100">
+                  <span className="text-gold-400">⤳</span> {whatIfs.length} other{' '}
+                  {whatIfs.length > 1 ? 'moves' : 'move'} your opponent might play here
+                </span>
+                <span className="flex-shrink-0 font-body text-xs font-semibold text-gold-300">View ↓</span>
+              </button>
+            )}
           </div>
 
           {/* Explanation panel */}
-          <div className="space-y-5">
+          <div className="space-y-4 sm:space-y-5">
             {/* Variation banner — shown while learning a branch */}
             {branch && (
               <div className="bg-gold-500/10 border border-gold-500/40 rounded-2xl p-4 flex items-start justify-between gap-3">
@@ -159,7 +179,7 @@ export function LearnScreen({ opening, onPractice, onStartBranch, onBack }: Lear
               </div>
             )}
 
-            <div className="bg-ink-800 border border-ink-700 rounded-2xl p-6 min-h-[220px]">
+            <div className="bg-ink-800 border border-ink-700 rounded-2xl p-5 sm:p-6 min-h-[150px] sm:min-h-[220px]">
               {explanation ? (
                 <>
                   <div className="flex items-center gap-2 mb-3">
@@ -184,7 +204,7 @@ export function LearnScreen({ opening, onPractice, onStartBranch, onBack }: Lear
 
             {/* Contextual variations: what if the opponent deviates here? */}
             {whatIfs.length > 0 && (
-              <div className="bg-ink-800 border border-gold-500/30 rounded-2xl p-5">
+              <div ref={whatIfRef} className="bg-ink-800 border border-gold-500/30 rounded-2xl p-5 scroll-mt-20">
                 <h3 className="font-display text-sm font-semibold text-ivory-100 mb-1 flex items-center gap-2">
                   <span className="text-gold-400">⤳</span> What if they play something else?
                 </h3>
