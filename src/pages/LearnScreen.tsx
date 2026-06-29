@@ -179,17 +179,17 @@ export function LearnScreen({ opening, onPractice, onStartBranch, onBack }: Lear
               </div>
             )}
 
-            <div className="bg-ink-800 border border-ink-700 rounded-2xl p-5 sm:p-6 min-h-[150px] sm:min-h-[220px]">
+            <div className="bg-ink-800 border border-ink-700 rounded-2xl p-4 sm:p-6 min-h-[110px] sm:min-h-[220px]">
               {explanation ? (
                 <>
-                  <div className="flex items-center gap-2 mb-3">
+                  <div className="flex items-center gap-2 mb-2 sm:mb-3">
                     <span className="font-body text-xs text-ivory-500">Move {moveNumber} of {Math.ceil(demo.totalMoves / 2)}</span>
                     <span className="font-body text-xs px-2 py-0.5 rounded-full bg-ink-900 border border-ink-600 text-ivory-400">
                       {byUser ? 'You' : 'Opponent'}
                     </span>
                   </div>
-                  <div className="font-display text-3xl sm:text-4xl font-bold text-gold-400 mb-2 sm:mb-4">{san}</div>
-                  <p className="font-body text-base text-ivory-200 leading-relaxed">{explanation}</p>
+                  <div className="font-display text-2xl sm:text-4xl font-bold text-gold-400 mb-1.5 sm:mb-4">{san}</div>
+                  <p className="font-body text-sm sm:text-base text-ivory-200 leading-relaxed">{explanation}</p>
                 </>
               ) : (
                 <div className="h-full flex flex-col justify-center">
