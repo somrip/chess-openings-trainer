@@ -181,8 +181,8 @@ export function PracticeMode({ opening, branch, maxMoves, review, onBack, onChoo
     <div className="min-h-screen bg-ink-950 text-ivory-100 flex flex-col">
       <NavBar onHome={onChooseAnother} subtitle={review ? `Review · ${review.index + 1} of ${review.total}` : title} />
 
-      <div className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 pt-20 pb-6">
-        <div className="mt-6 mb-6 flex items-center justify-between">
+      <div className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 pt-16 sm:pt-20 pb-6">
+        <div className="mt-3 mb-3 sm:mt-6 sm:mb-6 flex items-center justify-between">
           <button
             onClick={onBack}
             className="flex items-center gap-2 font-body text-sm text-ivory-500 hover:text-ivory-200 transition-colors duration-200 group focus-visible:outline-none"
@@ -231,9 +231,9 @@ export function PracticeMode({ opening, branch, maxMoves, review, onBack, onChoo
           </div>
         )}
 
-        <div className="grid lg:grid-cols-[1fr_320px] gap-8 items-start">
+        <div className="grid lg:grid-cols-[1fr_320px] gap-4 sm:gap-8 items-start">
           {/* Board column */}
-          <div>
+          <div className="mx-auto w-full max-w-[330px] lg:max-w-none">
             {/* Status bar */}
             <div
               key={shakeKey}
@@ -306,9 +306,9 @@ export function PracticeMode({ opening, branch, maxMoves, review, onBack, onChoo
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-5 animate-fade-in">
-            {/* Progress */}
-            <div className="bg-ink-800 border border-ink-700 rounded-2xl p-5">
+          <div className="space-y-3 sm:space-y-5 animate-fade-in">
+            {/* Progress (status bar already shows move count on mobile) */}
+            <div className="hidden lg:block bg-ink-800 border border-ink-700 rounded-2xl p-5">
               <p className="font-body text-xs text-ivory-500 mb-1">
                 {branch ? (branch.kind === 'trap' ? 'Trap' : 'Deviation') : isEssentials ? 'Essentials · first moves' : 'Opening'}
               </p>
@@ -338,13 +338,13 @@ export function PracticeMode({ opening, branch, maxMoves, review, onBack, onChoo
               >
                 {hintLevel === 0 ? 'Show a hint' : hintLevel === 1 ? 'Show me where' : 'Hint shown'}
               </button>
-              <p className="font-body text-xs text-ivory-600 mt-2 leading-relaxed">
+              <p className="hidden sm:block font-body text-xs text-ivory-600 mt-2 leading-relaxed">
                 First hint highlights the piece, second shows the target square.
               </p>
             </div>
 
             {/* Repetitions */}
-            <div className="bg-ink-800 border border-ink-700 rounded-2xl p-5">
+            <div className="hidden lg:block bg-ink-800 border border-ink-700 rounded-2xl p-5">
               <p className="font-body text-xs text-ivory-500 mb-1">This session</p>
               <div className="flex items-baseline gap-2">
                 <span className="font-display text-4xl font-bold text-gold-400">{repetitions}</span>

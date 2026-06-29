@@ -83,10 +83,10 @@ export function LearnScreen({ opening, onPractice, onStartBranch, onBack }: Lear
     <div className="min-h-screen bg-ink-950 text-ivory-100 flex flex-col">
       <NavBar onHome={onBack} subtitle={`${opening.name} · Learn${branch ? ` · ${branch.name}` : ''}`} />
 
-      <div className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 pt-20 pb-8">
+      <div className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 pt-16 sm:pt-20 pb-8">
         <button
           onClick={onBack}
-          className="mt-6 mb-6 flex items-center gap-2 font-body text-sm text-ivory-400 hover:text-ivory-100 transition-colors duration-200 group focus-visible:outline-none"
+          className="mt-3 mb-3 sm:mt-6 sm:mb-6 flex items-center gap-2 font-body text-sm text-ivory-400 hover:text-ivory-100 transition-colors duration-200 group focus-visible:outline-none"
         >
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="group-hover:-translate-x-0.5 transition-transform duration-200">
             <path d="M10 3L5 8l5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -94,9 +94,9 @@ export function LearnScreen({ opening, onPractice, onStartBranch, onBack }: Lear
           Back to overview
         </button>
 
-        <div className="grid lg:grid-cols-[1fr_400px] gap-8 items-start">
+        <div className="grid lg:grid-cols-[1fr_400px] gap-4 sm:gap-8 items-start">
           {/* Board + transport */}
-          <div>
+          <div className="mx-auto w-full max-w-[330px] lg:max-w-none">
             <div className="rounded-2xl overflow-hidden border border-ink-700 shadow-[0_24px_80px_rgba(0,0,0,0.6)]">
               <Chessboard
                 position={demo.fen}
@@ -188,7 +188,7 @@ export function LearnScreen({ opening, onPractice, onStartBranch, onBack }: Lear
                       {byUser ? 'You' : 'Opponent'}
                     </span>
                   </div>
-                  <div className="font-display text-4xl font-bold text-gold-400 mb-4">{san}</div>
+                  <div className="font-display text-3xl sm:text-4xl font-bold text-gold-400 mb-2 sm:mb-4">{san}</div>
                   <p className="font-body text-base text-ivory-200 leading-relaxed">{explanation}</p>
                 </>
               ) : (
@@ -240,8 +240,8 @@ export function LearnScreen({ opening, onPractice, onStartBranch, onBack }: Lear
               </div>
             )}
 
-            {/* Move list */}
-            <div className="bg-ink-800 border border-ink-700 rounded-2xl p-5">
+            {/* Move list (hidden on mobile to save space; use Prev/Next or the menu) */}
+            <div className="hidden lg:block bg-ink-800 border border-ink-700 rounded-2xl p-5">
               <div className="flex flex-wrap gap-x-3 gap-y-1.5">
                 {movePairs.map((pair, pairIdx) => (
                   <span key={pairIdx} className="font-body text-sm flex items-baseline gap-1">
