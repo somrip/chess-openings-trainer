@@ -21,6 +21,10 @@ const PIECE_ICON: Record<string, string> = {
   'vienna-game': '♘',
   'kings-gambit': '♔',
   'slav-defense': '♟',
+  'dutch-defense': '♚',
+  'smith-morra-gambit': '♙',
+  'french-advance': '♗',
+  'panov-attack': '♘',
 }
 
 export function OpeningCard({ opening, onClick, style, learned, due }: OpeningCardProps) {
