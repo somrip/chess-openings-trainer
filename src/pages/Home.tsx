@@ -58,8 +58,9 @@ export function Home({ onSelect, onStartReview, streak, learnedCount, dueCount, 
           ))}
         </div>
 
-        {/* Review CTA — appears when openings are due for spaced review */}
-        {dueCount > 0 && (
+        {/* Review CTA — active when openings are due; muted "caught up" state
+            once you've learned something but nothing is due yet. */}
+        {dueCount > 0 ? (
           <div className="mt-8 animate-fade-in" style={{ animationDelay: '0.2s', opacity: 0 }}>
             <button
               onClick={onStartReview}
@@ -79,7 +80,21 @@ export function Home({ onSelect, onStartReview, streak, learnedCount, dueCount, 
               <span className="ml-2 text-gold-300 group-hover:translate-x-0.5 transition-transform">→</span>
             </button>
           </div>
-        )}
+        ) : learnedCount > 0 ? (
+          <div className="mt-8 animate-fade-in" style={{ animationDelay: '0.2s', opacity: 0 }}>
+            <div className="flex items-center gap-4 rounded-2xl border border-ink-700 bg-ink-800/60 px-5 py-4">
+              <span className="flex-shrink-0 flex items-center justify-center w-11 h-11 rounded-xl bg-ink-700 text-ivory-400 text-xl">
+                ✓
+              </span>
+              <span className="text-left">
+                <span className="block font-display text-base font-semibold text-ivory-200">No reviews due right now</span>
+                <span className="block font-body text-sm text-ivory-500">
+                  You're all caught up — practiced openings reappear here when they're due for review.
+                </span>
+              </span>
+            </div>
+          </div>
+        ) : null}
       </section>
 
       {/* Divider */}
