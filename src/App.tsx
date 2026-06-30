@@ -21,6 +21,8 @@ export function App() {
   const [review, setReview] = useState<{ queue: string[]; index: number } | null>(null)
   // Set when a review session finishes, to show the completion screen.
   const [reviewDone, setReviewDone] = useState<number | null>(null)
+  // When learning a trap/variation line from the hub (not the main line).
+  const [learnBranch, setLearnBranch] = useState<BranchLine | null>(null)
   const progress = useProgress()
 
   function handleSelectOpening(opening: Opening) {
@@ -31,6 +33,12 @@ export function App() {
   }
 
   function handleStartLearn() {
+    setLearnBranch(null)
+    setView('learn')
+  }
+
+  function handleLearnBranch(branch: BranchLine) {
+    setLearnBranch(branch)
     setView('learn')
   }
 
@@ -115,6 +123,7 @@ export function App() {
           onStartLearn={handleStartLearn}
           onStartPractice={handleStartPractice}
           onStartBranch={handleStartBranch}
+          onLearnBranch={handleLearnBranch}
           onBack={handleGoHome}
         />
       )
@@ -123,7 +132,9 @@ export function App() {
     if (view === 'learn' && selectedOpening) {
       return (
         <LearnScreen
+          key={`learn-${selectedOpening.id}-${learnBranch?.id ?? 'main'}`}
           opening={selectedOpening}
+          initialBranch={learnBranch}
           onPractice={() => handleStartPractice()}
           onStartBranch={handleStartBranch}
           onBack={() => setView('opening')}

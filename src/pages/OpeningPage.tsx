@@ -11,10 +11,11 @@ interface OpeningPageProps {
   onStartLearn: () => void
   onStartPractice: (limit?: number) => void
   onStartBranch: (branch: BranchLine) => void
+  onLearnBranch: (branch: BranchLine) => void
   onBack: () => void
 }
 
-export function OpeningPage({ opening, progress, isDue, onStartLearn, onStartPractice, onStartBranch, onBack }: OpeningPageProps) {
+export function OpeningPage({ opening, progress, isDue, onStartLearn, onStartPractice, onStartBranch, onLearnBranch, onBack }: OpeningPageProps) {
   const isWhite = opening.side === 'white'
   const moveCount = Math.ceil(opening.moves.length / 2)
   const extras = getExtras(opening.id)
@@ -199,6 +200,7 @@ export function OpeningPage({ opening, progress, isDue, onStartLearn, onStartPra
               cta="Practice this trap"
               branches={opening.traps}
               onStart={onStartBranch}
+              onLearn={onLearnBranch}
             />
 
             {/* Common variations / off-book lines */}
@@ -210,6 +212,7 @@ export function OpeningPage({ opening, progress, isDue, onStartLearn, onStartPra
               branches={opening.deviations}
               mainMoves={opening.moves}
               onStart={onStartBranch}
+              onLearn={onLearnBranch}
             />
           </div>
 
@@ -253,6 +256,7 @@ function BranchSection({
   branches,
   mainMoves,
   onStart,
+  onLearn,
 }: {
   icon: string
   title: string
@@ -261,6 +265,7 @@ function BranchSection({
   branches?: BranchLine[]
   mainMoves?: string[]
   onStart: (b: BranchLine) => void
+  onLearn: (b: BranchLine) => void
 }) {
   if (!branches || branches.length === 0) return null
   return (
@@ -286,12 +291,22 @@ function BranchSection({
               </p>
             )}
             <p className="font-body text-xs text-ivory-400 leading-relaxed mb-3">{b.setup}</p>
-            <button
-              onClick={() => onStart(b)}
-              className="font-body text-xs font-medium text-gold-300 hover:text-gold-200 border border-gold-500/30 hover:border-gold-500/60 rounded-lg px-3 py-1.5 transition-colors duration-200 focus-visible:outline-none"
-            >
-              {cta} →
-            </button>
+            <div className="flex flex-wrap gap-2">
+              {b.moveNotes && (
+                <button
+                  onClick={() => onLearn(b)}
+                  className="font-body text-xs font-semibold text-ink-950 bg-gold-500 hover:bg-gold-400 rounded-lg px-3 py-1.5 transition-colors duration-200 focus-visible:outline-none"
+                >
+                  📖 Learn
+                </button>
+              )}
+              <button
+                onClick={() => onStart(b)}
+                className="font-body text-xs font-medium text-gold-300 hover:text-gold-200 border border-gold-500/30 hover:border-gold-500/60 rounded-lg px-3 py-1.5 transition-colors duration-200 focus-visible:outline-none"
+              >
+                {cta} →
+              </button>
+            </div>
           </div>
         ))}
       </div>

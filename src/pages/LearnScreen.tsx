@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { Chessboard } from 'react-chessboard'
 import { Chess } from 'chess.js'
 import type { Opening, BranchLine } from '../types'
@@ -8,30 +8,28 @@ import { getExtras } from '../data/openingExtras'
 
 interface LearnScreenProps {
   opening: Opening
+  /** When set, start the walkthrough on this trap/variation line (from move 1). */
+  initialBranch?: BranchLine | null
   onPractice: () => void
   onStartBranch: (branch: BranchLine) => void
   onBack: () => void
 }
 
-export function LearnScreen({ opening, onPractice, onStartBranch, onBack }: LearnScreenProps) {
+export function LearnScreen({ opening, initialBranch, onPractice, onStartBranch, onBack }: LearnScreenProps) {
   const extras = getExtras(opening.id)
 
-  // The Learn walkthrough can follow the main line, or branch into a variation
-  // at its fork point and continue from there.
-  const [branch, setBranch] = useState<BranchLine | null>(null)
-  // Where to resume the main line when leaving a variation (its fork move).
+  // The walkthrough can follow the main line or a trap/variation. A branch
+  // chosen from the hub starts at move 1; one entered at a fork mid-walkthrough
+  // resumes from that fork.
+  const [branch, setBranch] = useState<BranchLine | null>(initialBranch ?? null)
+  // Index the active branch starts at, and where to resume the main line on exit.
+  const [branchStart, setBranchStart] = useState(0)
   const [mainResume, setMainResume] = useState(0)
-
-  // Reset branching if the opening itself changes.
-  useEffect(() => {
-    setBranch(null)
-    setMainResume(0)
-  }, [opening.id])
 
   const line = branch ?? opening
   const isWhite = line.side === 'white'
   const lineId = branch ? `${opening.id}::${branch.id}` : opening.id
-  const initialIndex = branch ? branch.branchFromMove! : mainResume
+  const initialIndex = branch ? branchStart : mainResume
   const demo = useDemo({ id: lineId, moves: line.moves }, initialIndex)
 
   const notes = branch ? branch.moveNotes ?? [] : extras?.learnNotes ?? opening.moveNotes
@@ -39,7 +37,9 @@ export function LearnScreen({ opening, onPractice, onStartBranch, onBack }: Lear
   const whatIfRef = useRef<HTMLDivElement>(null)
 
   function enterBranch(d: BranchLine) {
-    setMainResume(d.branchFromMove!)
+    const fork = d.branchFromMove ?? 0
+    setBranchStart(fork)
+    setMainResume(fork)
     setBranch(d)
   }
 
@@ -167,7 +167,9 @@ export function LearnScreen({ opening, onPractice, onStartBranch, onBack }: Lear
             {branch && (
               <div className="bg-gold-500/10 border border-gold-500/40 rounded-2xl p-4 flex items-start justify-between gap-3">
                 <div>
-                  <p className="font-body text-[11px] uppercase tracking-wide text-gold-300/80 mb-0.5">Learning variation</p>
+                  <p className="font-body text-[11px] uppercase tracking-wide text-gold-300/80 mb-0.5">
+                    {branch.kind === 'trap' ? 'Learning trap' : 'Learning variation'}
+                  </p>
                   <p className="font-display text-sm font-semibold text-ivory-100">{branch.name}</p>
                 </div>
                 <button
@@ -193,10 +195,14 @@ export function LearnScreen({ opening, onPractice, onStartBranch, onBack }: Lear
                 </>
               ) : (
                 <div className="h-full flex flex-col justify-center">
-                  <h2 className="font-display text-2xl font-bold text-ivory-100 mb-2">Learn the {opening.name}</h2>
+                  <h2 className="font-display text-2xl font-bold text-ivory-100 mb-2">
+                    {branch ? branch.name : `Learn the ${opening.name}`}
+                  </h2>
                   <p className="font-body text-base text-ivory-400 leading-relaxed">
-                    Step through the opening one move at a time. Each move comes with an explanation of the idea behind it
-                    and why it's good. Press <span className="text-gold-400 font-medium">Next</span> to begin.
+                    {branch
+                      ? branch.setup
+                      : "Step through the opening one move at a time. Each move comes with an explanation of the idea behind it and why it's good."}{' '}
+                    Press <span className="text-gold-400 font-medium">Next</span> to begin.
                   </p>
                 </div>
               )}
