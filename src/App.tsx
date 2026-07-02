@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { Opening, AppView, BranchLine } from './types'
 import { openings, getOpeningById } from './data/openings'
 import { NavContext } from './components/NavContext'
@@ -24,6 +24,12 @@ export function App() {
   // When learning a trap/variation line from the hub (not the main line).
   const [learnBranch, setLearnBranch] = useState<BranchLine | null>(null)
   const progress = useProgress()
+
+  // Reset scroll to the top whenever we navigate between screens — the
+  // state-based router keeps the window's scroll position otherwise.
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [view, selectedOpening?.id, selectedBranch?.id, learnBranch?.id, review?.index, reviewDone])
 
   function handleSelectOpening(opening: Opening) {
     setReview(null)
