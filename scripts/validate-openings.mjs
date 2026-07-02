@@ -28,6 +28,9 @@ for (const o of openings) {
   for (const t of o.traps ?? []) {
     checkLine(`${o.name} → trap: ${t.name}`, t.moves, t.moveNotes)
   }
+  for (const c of o.counters ?? []) {
+    checkLine(`${o.name} → counter: ${c.name}`, c.moves, c.moveNotes)
+  }
   for (const d of o.deviations ?? []) {
     checkLine(`${o.name} → deviation: ${d.name}`, d.moves, d.moveNotes)
     if (d.branchFromMove != null) {

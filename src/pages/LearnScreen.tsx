@@ -168,7 +168,7 @@ export function LearnScreen({ opening, initialBranch, onPractice, onStartBranch,
               <div className="bg-gold-500/10 border border-gold-500/40 rounded-2xl p-4 flex items-start justify-between gap-3">
                 <div>
                   <p className="font-body text-[11px] uppercase tracking-wide text-gold-300/80 mb-0.5">
-                    {branch.kind === 'trap' ? 'Learning trap' : 'Learning variation'}
+                    {branch.kind === 'trap' ? 'Learning trap' : branch.kind === 'counter' ? 'Learning to face' : 'Learning variation'}
                   </p>
                   <p className="font-display text-sm font-semibold text-ivory-100">{branch.name}</p>
                 </div>

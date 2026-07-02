@@ -192,6 +192,17 @@ export function OpeningPage({ opening, progress, isDue, onStartLearn, onStartPra
               )}
             </div>
 
+            {/* Facing this opening — train the other side */}
+            <BranchSection
+              icon="🛡️"
+              title="Facing This Opening"
+              blurb={`Sit in the other seat — learn how to meet this opening and answer each move as ${isWhite ? 'Black' : 'White'}.`}
+              cta="Practice this line"
+              branches={opening.counters}
+              onStart={onStartBranch}
+              onLearn={onLearnBranch}
+            />
+
             {/* Traps */}
             <BranchSection
               icon="🎯"

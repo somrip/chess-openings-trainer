@@ -224,7 +224,7 @@ export function PracticeMode({ opening, branch, maxMoves, review, onBack, onChoo
           <div className="mb-4 rounded-xl border border-gold-500/30 bg-gold-500/5 px-4 py-3">
             <p className="font-body text-sm text-ivory-300 leading-relaxed">
               <span className="text-gold-400 font-medium">
-                {branch.kind === 'trap' ? 'Trap' : 'Deviation'} · {branch.name} —{' '}
+                {branch.kind === 'trap' ? 'Trap' : branch.kind === 'counter' ? 'Facing' : 'Deviation'} · {branch.name} —{' '}
               </span>
               {branch.setup}
             </p>
@@ -310,7 +310,7 @@ export function PracticeMode({ opening, branch, maxMoves, review, onBack, onChoo
             {/* Progress (status bar already shows move count on mobile) */}
             <div className="hidden lg:block bg-ink-800 border border-ink-700 rounded-2xl p-5">
               <p className="font-body text-xs text-ivory-500 mb-1">
-                {branch ? (branch.kind === 'trap' ? 'Trap' : 'Deviation') : isEssentials ? 'Essentials · first moves' : 'Opening'}
+                {branch ? (branch.kind === 'trap' ? 'Trap' : branch.kind === 'counter' ? 'Facing' : 'Deviation') : isEssentials ? 'Essentials · first moves' : 'Opening'}
               </p>
               <h2 className="font-display text-lg font-semibold text-ivory-100 mb-4">{title}</h2>
               <ProgressBar current={progressMoves} total={totalMoves} />
@@ -382,13 +382,14 @@ interface SuccessScreenProps {
 function SuccessScreen({ opening, branch, recorded, isEssentials, review, onAgain, onChooseAnother, onPlayOn }: SuccessScreenProps) {
   const isTrap = branch?.kind === 'trap'
   const isDeviation = branch?.kind === 'deviation'
+  const isCounter = branch?.kind === 'counter'
   const isLastReview = review && review.index + 1 >= review.total
   return (
     <div className="min-h-screen bg-ink-950 flex flex-col items-center justify-center px-4 text-center animate-fade-in">
-      <div className="text-7xl mb-6 animate-pop">{isTrap ? '🎯' : isDeviation ? '🧭' : '♛'}</div>
+      <div className="text-7xl mb-6 animate-pop">{isTrap ? '🎯' : isDeviation ? '🧭' : isCounter ? '🛡️' : '♛'}</div>
 
       <p className="font-body text-sm font-medium text-gold-400 tracking-widest uppercase mb-3">
-        {isTrap ? 'Trap Mastered' : isDeviation ? 'Deviation Handled' : 'Opening Complete'}
+        {isTrap ? 'Trap Mastered' : isDeviation ? 'Deviation Handled' : isCounter ? 'Opening Faced' : 'Opening Complete'}
       </p>
 
       <h1 className="font-display text-4xl sm:text-5xl font-bold text-ivory-100 mb-4">Well played!</h1>
@@ -398,6 +399,8 @@ function SuccessScreen({ opening, branch, recorded, isEssentials, review, onAgai
           <>You sprang the <span className="text-ivory-200 font-medium">{branch!.name}</span>.</>
         ) : isDeviation ? (
           <>You handled <span className="text-ivory-200 font-medium">{branch!.name}</span> correctly.</>
+        ) : isCounter ? (
+          <>You met the <span className="text-ivory-200 font-medium">{opening.name}</span> with <span className="text-ivory-200 font-medium">{branch!.name}</span>.</>
         ) : isEssentials ? (
           <>You've got the <span className="text-ivory-200 font-medium">essentials</span> of the {opening.name}. Ready for the full line?</>
         ) : (

@@ -5,8 +5,11 @@
 export interface BranchLine {
   id: string
   name: string
-  /** 'trap' = the user springs it; 'deviation' = handling an off-book opponent */
-  kind: 'trap' | 'deviation'
+  /**
+   * 'trap' = the user springs it; 'deviation' = handling an off-book opponent;
+   * 'counter' = training the *other* side, i.e. how to face this opening.
+   */
+  kind: 'trap' | 'deviation' | 'counter'
   /** Which side the user plays in this line (may differ from the opening) */
   side: 'white' | 'black'
   /**
@@ -47,6 +50,12 @@ export interface Opening {
   traps?: BranchLine[]
   /** How to respond when the opponent goes off-book (kind: 'deviation') */
   deviations?: BranchLine[]
+  /**
+   * How to face this opening from the other side (kind: 'counter'). Each line's
+   * `side` is the opposite of the opening's. Standalone lines from move 1 (no
+   * `branchFromMove`); like traps/deviations they do NOT count toward progress.
+   */
+  counters?: BranchLine[]
 }
 
 /** A short lesson on the pawn structure an opening produces and the plan it implies */
